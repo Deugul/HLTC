@@ -86,6 +86,16 @@
   ::-webkit-scrollbar-track { background: var(--c-bg0); }
   ::-webkit-scrollbar-thumb { background: var(--c-thumb); border-radius: 4px; }
   ::-webkit-scrollbar-thumb:hover { background: var(--c-thumb-hover); }
+
+  /* ── Mobile nav ─────────────────────────────────────── */
+  @media (max-width: 767px) {
+    .nav-links { display: none !important; }
+    .nav-live  { display: none !important; }
+    .spring-card:hover { transform: none; box-shadow: none; }
+    .glass-hover:hover { transform: none; box-shadow: none; }
+    .row-hover:hover { padding-left: 0 !important; padding-right: 0 !important; }
+    .tilt-disc { transition: none; }
+  }
 </style>
 <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
@@ -293,6 +303,16 @@ function useScrollParallax(strength = 0.1) {
   return ref;
 }
 
+function useViewport() {
+  const [w, setW] = React.useState(window.innerWidth);
+  React.useEffect(() => {
+    const h = () => setW(window.innerWidth);
+    window.addEventListener('resize', h);
+    return () => window.removeEventListener('resize', h);
+  }, []);
+  return { isMobile: w < 768, isTablet: w < 1024, w };
+}
+
 function useMouseTilt(strength = 5) {
   const ref = React.useRef(null);
   React.useEffect(() => {
@@ -349,12 +369,16 @@ const CircleBtn = ({ children, size = 40, accent, filled, style }) => (
 );
 
 const Sec = ({ idx, name, vertLabel, children, padTop = 80, padBottom = 80, style, id }) => {
+  const { isMobile } = useViewport();
   const ref = useReveal('reveal', 0.08);
+  const px = isMobile ? 20 : 48;
+  const pt = isMobile ? Math.max(48, padTop * 0.6) : padTop;
+  const pb = isMobile ? Math.max(48, padBottom * 0.6) : padBottom;
   return (
-    <section ref={ref} id={id} style={{ position: 'relative', borderTop: `1px solid ${C.line}`, padding: `${padTop}px 48px ${padBottom}px`, ...style }}>
-      <div style={{ position: 'absolute', top: 24, left: 48, right: 48, display: 'flex', justifyContent: 'space-between' }}>
+    <section ref={ref} id={id} style={{ position: 'relative', borderTop: `1px solid ${C.line}`, padding: `${pt}px ${px}px ${pb}px`, ...style }}>
+      <div style={{ position: 'absolute', top: 16, left: px, right: px, display: 'flex', justifyContent: 'space-between' }}>
         <Eyebrow>{idx} / {name}</Eyebrow>
-        {vertLabel ? <Eyebrow dim>{vertLabel}</Eyebrow> : null}
+        {vertLabel && !isMobile ? <Eyebrow dim>{vertLabel}</Eyebrow> : null}
       </div>
       {children}
     </section>
@@ -373,36 +397,88 @@ const Logo = () => (
   </div>
 );
 
-const Nav = ({ isDark, onToggle }) => (
-  <header style={{ position: 'sticky', top: 0, zIndex: 50, padding: '18px 48px', display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', borderBottom: `1px solid ${C.line}`, background: 'var(--c-nav-bg)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)' }}>
-    <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-      <Logo />
-      <Eyebrow dim>v0.4 · MAINNET</Eyebrow>
-    </div>
-    <nav style={{ display: 'flex', gap: 32, justifyContent: 'center' }}>
-      {[['Protocol', '#protocol'], ['Security', '#security'], ['Chains', '#chains'], ['Terminal', 'Terminal.html'], ['Docs', '#']].map(([t, h]) => (
-        <a key={t} href={h} className="nav-link-u" style={{ color: C.text, textDecoration: 'none', fontFamily: FONT_SANS, fontSize: 13, letterSpacing: '0.01em' }}>{t}</a>
-      ))}
-    </nav>
-    <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', alignItems: 'center' }}>
-      <Eyebrow accent>● LIVE</Eyebrow>
-      <button onClick={onToggle} className="theme-btn" title={isDark ? 'Switch to light mode' : 'Switch to dark mode'} style={{ width: 32, height: 32, borderRadius: '50%', border: `1px solid ${C.lineStrong}`, background: 'transparent', color: C.text, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, flexShrink: 0 }}>
-        {isDark ? '○' : '●'}
-      </button>
-      <Pill ghost>Audit ↗</Pill>
-      <Pill accent filled>Launch ↗</Pill>
-    </div>
-  </header>
-);
+const Nav = ({ isDark, onToggle }) => {
+  const { isMobile } = useViewport();
+  const [menuOpen, setMenuOpen] = React.useState(false);
+  return (
+    <header style={{ position: 'sticky', top: 0, zIndex: 50, padding: isMobile ? '14px 20px' : '18px 48px', borderBottom: `1px solid ${C.line}`, background: 'var(--c-nav-bg)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <Logo />
+          {!isMobile && <Eyebrow dim>v0.4 · MAINNET</Eyebrow>}
+        </div>
+        <nav className="nav-links" style={{ display: 'flex', gap: 32 }}>
+          {[['Protocol', '#protocol'], ['Security', '#security'], ['Chains', '#chains'], ['Terminal', 'Terminal.html'], ['Docs', '#']].map(([t, h]) => (
+            <a key={t} href={h} className="nav-link-u" style={{ color: C.text, textDecoration: 'none', fontFamily: FONT_SANS, fontSize: 13, letterSpacing: '0.01em' }}>{t}</a>
+          ))}
+        </nav>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          {!isMobile && <Eyebrow accent className="nav-live">● LIVE</Eyebrow>}
+          <button onClick={onToggle} className="theme-btn" title={isDark ? 'Light mode' : 'Dark mode'} style={{ width: 32, height: 32, borderRadius: '50%', border: `1px solid ${C.lineStrong}`, background: 'transparent', color: C.text, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, flexShrink: 0 }}>
+            {isDark ? '○' : '●'}
+          </button>
+          {!isMobile && <Pill ghost>Audit ↗</Pill>}
+          <Pill accent filled>Launch ↗</Pill>
+          {isMobile && (
+            <button onClick={() => setMenuOpen(o => !o)} style={{ width: 32, height: 32, borderRadius: 8, border: `1px solid ${C.lineStrong}`, background: 'transparent', color: C.text, cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 5, flexShrink: 0 }}>
+              <span style={{ width: 14, height: 1, background: C.text, display: 'block' }} />
+              <span style={{ width: 14, height: 1, background: C.text, display: 'block' }} />
+              <span style={{ width: 14, height: 1, background: C.text, display: 'block' }} />
+            </button>
+          )}
+        </div>
+      </div>
+      {isMobile && menuOpen && (
+        <nav style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${C.line}`, display: 'flex', flexDirection: 'column', gap: 0 }}>
+          {[['Protocol', '#protocol'], ['Security', '#security'], ['Chains', '#chains'], ['Terminal', 'Terminal.html'], ['Docs', '#']].map(([t, h]) => (
+            <a key={t} href={h} onClick={() => setMenuOpen(false)} style={{ color: C.text, textDecoration: 'none', fontFamily: FONT_SANS, fontSize: 15, padding: '12px 0', borderBottom: `1px solid ${C.line}` }}>{t}</a>
+          ))}
+        </nav>
+      )}
+    </header>
+  );
+};
 
 function Hero() {
+  const { isMobile } = useViewport();
   const [block, setBlock] = React.useState(19488302);
   React.useEffect(() => { const id = setInterval(() => setBlock(x => x + 1), 12000); return () => clearInterval(id); }, []);
+
+  if (isMobile) return (
+    <section style={{ position: 'relative', overflow: 'hidden', padding: '40px 20px 48px' }}>
+      <div style={{ position: 'absolute', inset: 0, background: `radial-gradient(ellipse 80% 50% at 50% 60%, rgba(255,255,255,0.04), transparent 70%)`, pointerEvents: 'none' }} />
+      <div className="hero-dot-grid" />
+      <div style={{ position: 'relative', zIndex: 2 }}>
+        <Eyebrow accent>● MAINNET LIVE</Eyebrow>
+        <div style={{ display: 'flex', justifyContent: 'center', margin: '32px 0' }}>
+          <Orbital />
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginTop: 8 }}>
+          <div style={{ padding: '16px', border: `1px solid ${C.line}`, borderRadius: 12 }}>
+            <Eyebrow dim>SETTLEMENT</Eyebrow>
+            <div style={{ fontFamily: FONT_DISP, fontSize: 32, fontWeight: 200, color: C.text, lineHeight: 1, marginTop: 6 }}>4.2<span style={{ fontSize: 14, color: C.dim, marginLeft: 3 }}>min</span></div>
+          </div>
+          <div style={{ padding: '16px', border: `1px solid ${C.line}`, borderRadius: 12 }}>
+            <Eyebrow dim>NOTIONAL 30D</Eyebrow>
+            <div style={{ fontFamily: FONT_DISP, fontSize: 32, fontWeight: 200, color: C.text, lineHeight: 1, marginTop: 6 }}>$1.42<span style={{ fontSize: 14, color: C.dim, marginLeft: 3 }}>B</span></div>
+          </div>
+          <div style={{ padding: '16px', border: `1px solid ${C.line}`, borderRadius: 12 }}>
+            <Eyebrow dim>NETWORK</Eyebrow>
+            <div style={{ fontFamily: FONT_MONO, fontSize: 11, color: C.text, marginTop: 6 }}>BLOCK {block.toLocaleString()}</div>
+          </div>
+          <div style={{ padding: '16px', border: `1px solid ${C.line}`, borderRadius: 12 }}>
+            <Eyebrow dim>UPTIME 90D</Eyebrow>
+            <div style={{ fontFamily: FONT_DISP, fontSize: 28, fontWeight: 200, color: C.text, marginTop: 6 }}>99.98%</div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+
   return (
     <section style={{ position: 'relative', minHeight: 880, display: 'grid', gridTemplateColumns: '64px 1fr 64px', overflow: 'hidden' }}>
       <div style={{ position: 'absolute', inset: 0, background: `radial-gradient(ellipse 60% 50% at 50% 55%, rgba(255,255,255,0.05), transparent 70%)`, pointerEvents: 'none' }} />
       <div className="hero-dot-grid" />
-      {/* L rail */}
       <div style={{ borderRight: `1px solid ${C.line}`, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '88px 0 32px', alignItems: 'center', position: 'relative', zIndex: 2, overflow: 'hidden' }}>
         <Eyebrow dim style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>01 / HERO</Eyebrow>
         <div style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)', fontFamily: FONT_DISP, fontWeight: 200, letterSpacing: '-0.04em', fontSize: 48, color: C.text, lineHeight: 1 }}>HTLC</div>
@@ -411,7 +487,6 @@ function Hero() {
           <CircleBtn size={28}>↓</CircleBtn>
         </div>
       </div>
-      {/* center */}
       <div style={{ position: 'relative', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gridTemplateRows: 'auto 1fr auto' }}>
         <div style={{ padding: '32px 32px 0', display: 'flex', flexDirection: 'column', gap: 8 }}>
           <Eyebrow>SETTLEMENT MEDIAN</Eyebrow>
@@ -443,7 +518,6 @@ function Hero() {
           <div style={{ fontFamily: FONT_DISP, fontSize: 32, fontWeight: 200, color: C.text, marginTop: 6 }}>99.98%</div>
         </div>
       </div>
-      {/* R rail */}
       <div style={{ borderLeft: `1px solid ${C.line}`, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '88px 0 32px', alignItems: 'center', position: 'relative', zIndex: 2 }}>
         <Eyebrow accent style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>● MAINNET</Eyebrow>
         <Eyebrow dim style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)', letterSpacing: '0.3em' }}>NON · CUSTODIAL · ATOMIC · TRUST-MINIMIZED</Eyebrow>
@@ -454,10 +528,13 @@ function Hero() {
 }
 
 function Orbital() {
-  const parallaxRef = useScrollParallax(0.06);
-  const tiltRef = useMouseTilt(5);
+  const { isMobile } = useViewport();
+  const parallaxRef = useScrollParallax(isMobile ? 0 : 0.06);
+  const tiltRef = useMouseTilt(isMobile ? 0 : 5);
+  const S = isMobile ? 0.45 : 1;
+  const sz = 720 * S;
   return (
-    <div ref={parallaxRef} style={{ position: 'relative', width: 720, height: 720, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+    <div ref={parallaxRef} style={{ position: 'relative', width: sz, height: sz, display: 'flex', alignItems: 'center', justifyContent: 'center', transform: `scale(${S})`, transformOrigin: 'center center' }}>
       <div className="orbit-rotate" style={{ position: 'absolute', width: 720, height: 720, borderRadius: '50%', border: `1px dashed ${C.lineStrong}`, animationDuration: '120s' }}>
         {[{ d: 0, l: 'BTC · NODE 04' }, { d: 90, l: 'ETH · L1' }, { d: 180, l: 'USDT' }, { d: 270, l: 'USDC' }].map(n => (
           <div key={n.d} style={{ position: 'absolute', top: '50%', left: '50%', transform: `rotate(${n.d}deg) translateX(360px) rotate(-${n.d}deg)`, marginLeft: -28, marginTop: -28, width: 56, height: 56, borderRadius: '50%', background: C.bg1, border: `1px solid ${C.lineStrong}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -499,21 +576,24 @@ function Orbital() {
 }
 
 function About() {
+  const { isMobile } = useViewport();
   const statsRef = useStaggerReveal(5, 0.1);
   return (
     <Sec idx="02" name="WHAT IS THIS" vertLabel="↗ /ABOUT" id="protocol">
-      <div style={{ marginTop: 48, display: 'grid', gridTemplateColumns: '1fr 2.4fr', gap: 64, alignItems: 'flex-start' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <Eyebrow dim>OVERVIEW · §1.0</Eyebrow>
-          <div style={{ height: 1, background: C.line, width: 80 }} />
-          <Eyebrow>INSTITUTIONAL OTC</Eyebrow>
-        </div>
+      <div style={{ marginTop: 40, display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 2.4fr', gap: isMobile ? 24 : 64, alignItems: 'flex-start' }}>
+        {!isMobile && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <Eyebrow dim>OVERVIEW · §1.0</Eyebrow>
+            <div style={{ height: 1, background: C.line, width: 80 }} />
+            <Eyebrow>INSTITUTIONAL OTC</Eyebrow>
+          </div>
+        )}
         <div>
-          <h2 style={{ fontFamily: FONT_DISP, fontSize: 64, fontWeight: 200, letterSpacing: '-0.025em', lineHeight: 1.05, color: C.text, margin: 0 }}>
+          <h2 style={{ fontFamily: FONT_DISP, fontSize: isMobile ? 32 : 64, fontWeight: 200, letterSpacing: '-0.025em', lineHeight: 1.1, color: C.text, margin: 0 }}>
             Built for secure peer-to-peer OTC trading.{' '}
             <span style={{ color: C.dim }}>Direct BTC-to-stablecoin settlement powered by on-chain contracts — no central custody, full blockchain transparency.</span>
           </h2>
-          <div ref={statsRef} style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 0, marginTop: 48, borderTop: `1px solid ${C.line}` }}>
+          <div ref={statsRef} style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(5, 1fr)', gap: isMobile ? 0 : 0, marginTop: 32, borderTop: `1px solid ${C.line}` }}>
             {[
               { n: '00', t: 'No Central Custody', d: 'Funds stay in your wallet.' },
               { n: 'HTLC', t: 'Smart Contract Escrow', d: 'Hashed time-lock protection.' },
@@ -543,21 +623,23 @@ function HowItWorks() {
     { n: '05', t: 'Atomic Settlement',        s: 'claim(s) || refund(t > T)',     d: 'When payment conditions are met, the trade settles automatically. If conditions fail, funds revert safely to the original owner.' },
     { n: '06', t: 'On-Chain Completion',      s: 'emit Settled(tx_hash)',         d: 'Every step is transparently recorded on-chain for full auditability and institutional confidence.' },
   ];
+  const { isMobile, isTablet } = useViewport();
+  const cols = isMobile ? 1 : isTablet ? 2 : 3;
   const staggerRef = useStaggerReveal(6, 0.08);
   return (
     <Sec idx="03" name="HOW IT WORKS" vertLabel="∑ FLOW">
       <div style={{ marginTop: 16, marginBottom: 28 }}>
-        <h2 style={{ fontFamily: FONT_DISP, fontSize: 56, fontWeight: 200, letterSpacing: '-0.025em', lineHeight: 1.05, color: C.text, margin: 0, maxWidth: 900 }}>
+        <h2 style={{ fontFamily: FONT_DISP, fontSize: isMobile ? 28 : 56, fontWeight: 200, letterSpacing: '-0.025em', lineHeight: 1.1, color: C.text, margin: 0, maxWidth: 900 }}>
           Seamless OTC trading,{' '}<span style={{ color: C.dim }}>powered by smart contracts.</span>
         </h2>
       </div>
       <div style={{ marginTop: 24 }}>
-        <div ref={staggerRef} style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', position: 'relative' }}>
+        <div ref={staggerRef} style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, 1fr)`, position: 'relative' }}>
           {steps.map((s, i) => {
-            const col = i % 3;
-            const lastRow = i >= 3;
+            const col = i % cols;
+            const lastRow = i >= cols;
             return (
-              <div key={s.n} style={{ padding: col === 0 ? '0 32px 0 0' : (col === 1 ? '0 32px' : '0 0 0 32px'), borderRight: col < 2 ? `1px solid ${C.line}` : 'none', borderTop: lastRow ? `1px solid ${C.line}` : 'none', paddingTop: lastRow ? 40 : 0, paddingBottom: 40 }}>
+              <div key={s.n} style={{ padding: isMobile ? '24px 0' : col === 0 ? '0 32px 0 0' : (col === 1 && cols === 3 ? '0 32px' : '0 0 0 32px'), borderRight: col < cols - 1 ? `1px solid ${C.line}` : 'none', borderTop: lastRow ? `1px solid ${C.line}` : 'none', paddingTop: lastRow && !isMobile ? 40 : (isMobile ? 24 : 0), paddingBottom: 40 }}>
                 <div style={{ position: 'relative', height: 160, display: 'flex', alignItems: 'center', justifyContent: 'flex-start' }}>
                   <div style={{ position: 'relative', width: 160, height: 160 }}>
                     <div className="orbit-rotate" style={{ position: 'absolute', inset: 0, borderRadius: '50%', border: `1px dashed ${C.lineStrong}`, animationDuration: `${40 + i * 6}s` }} />
@@ -581,46 +663,47 @@ function HowItWorks() {
 }
 
 function Security() {
+  const { isMobile } = useViewport();
   const bentoRef = useStaggerReveal(6, 0.08);
   return (
     <Sec idx="04" name="SECURITY ARCHITECTURE" vertLabel="◐ AUDIT" id="security">
-      <div style={{ marginTop: 48, display: 'grid', gridTemplateColumns: '0.8fr 2.4fr', gap: 48, alignItems: 'flex-start' }}>
+      <div style={{ marginTop: 40, display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '0.8fr 2.4fr', gap: isMobile ? 24 : 48, alignItems: 'flex-start' }}>
         <div>
-          <h2 style={{ fontFamily: FONT_DISP, fontSize: 44, fontWeight: 200, letterSpacing: '-0.025em', lineHeight: 1.05, color: C.text, margin: 0 }}>Security as architecture, not assurance.</h2>
-          <p style={{ fontSize: 13.5, color: C.dim, marginTop: 18, lineHeight: 1.6, fontFamily: FONT_SANS }}>Five primitives, each verifiable on-chain. No off-protocol guarantees, no policy that can be silently changed.</p>
-          <div style={{ marginTop: 28 }}>
+          <h2 style={{ fontFamily: FONT_DISP, fontSize: isMobile ? 28 : 44, fontWeight: 200, letterSpacing: '-0.025em', lineHeight: 1.1, color: C.text, margin: 0 }}>Security as architecture, not assurance.</h2>
+          <p style={{ fontSize: 13.5, color: C.dim, marginTop: 14, lineHeight: 1.6, fontFamily: FONT_SANS }}>Five primitives, each verifiable on-chain. No off-protocol guarantees, no policy that can be silently changed.</p>
+          <div style={{ marginTop: 20 }}>
             <Pill ghost>Audit reports ↗</Pill>
           </div>
         </div>
-        <div ref={bentoRef} style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: 12 }}>
-          <Glass style={{ gridColumn: 'span 7', padding: 28, minHeight: 240, position: 'relative', overflow: 'hidden' }}>
+        <div ref={bentoRef} style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(12, 1fr)', gap: 12 }}>
+          <Glass style={{ gridColumn: isMobile ? 'span 1' : 'span 7', padding: isMobile ? 20 : 28, minHeight: isMobile ? 'auto' : 240, position: 'relative', overflow: 'hidden' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <Eyebrow>HTLC CONTRACTS</Eyebrow>
               <Eyebrow dim>BTC SCRIPT · SOLIDITY</Eyebrow>
             </div>
-            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 16, marginTop: 24 }}>
-              <div style={{ fontFamily: FONT_DISP, fontSize: 96, fontWeight: 200, letterSpacing: '-0.04em', lineHeight: 1, color: C.text }}>100<span style={{ fontSize: 36, color: C.dim }}>%</span></div>
-              <div style={{ paddingBottom: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 16, marginTop: 20 }}>
+              <div style={{ fontFamily: FONT_DISP, fontSize: isMobile ? 64 : 96, fontWeight: 200, letterSpacing: '-0.04em', lineHeight: 1, color: C.text }}>100<span style={{ fontSize: isMobile ? 24 : 36, color: C.dim }}>%</span></div>
+              <div style={{ paddingBottom: 8 }}>
                 <div style={{ fontFamily: FONT_DISP, fontSize: 18, fontWeight: 300, color: C.text }}>On-chain enforced</div>
                 <Eyebrow dim>HASH + TIMELOCK CONDITIONED</Eyebrow>
               </div>
             </div>
-            <div style={{ marginTop: 28, padding: 14, border: `1px solid ${C.line}`, background: 'var(--c-code-bg)', fontFamily: FONT_MONO, fontSize: 10, color: C.dim, lineHeight: 1.7, borderRadius: 8 }}>
+            <div style={{ marginTop: 20, padding: 14, border: `1px solid ${C.line}`, background: 'var(--c-code-bg)', fontFamily: FONT_MONO, fontSize: 10, color: C.dim, lineHeight: 1.7, borderRadius: 8, overflowX: 'auto' }}>
               <span style={{ color: C.faint }}>// settlement leg</span><br/>
               <span style={{ color: C.text }}>lock</span>(secret_h, <span style={{ color: C.accent }}>T</span>) ⟶ claim(secret) <span style={{ color: C.faint }}>||</span> refund(<span style={{ color: C.text }}>t</span> {'>'} <span style={{ color: C.accent }}>T</span>)
             </div>
           </Glass>
-          <Glass style={{ gridColumn: 'span 5', padding: 28, minHeight: 240 }}>
+          <Glass style={{ gridColumn: isMobile ? 'span 1' : 'span 5', padding: isMobile ? 20 : 28, minHeight: isMobile ? 'auto' : 240 }}>
             <Eyebrow>LOCK WINDOW</Eyebrow>
-            <div style={{ fontFamily: FONT_DISP, fontSize: 44, fontWeight: 200, letterSpacing: '-0.025em', color: C.text, marginTop: 16 }}>2h <span style={{ color: C.faint }}>—</span> 72h</div>
+            <div style={{ fontFamily: FONT_DISP, fontSize: isMobile ? 32 : 44, fontWeight: 200, letterSpacing: '-0.025em', color: C.text, marginTop: 12 }}>2h <span style={{ color: C.faint }}>—</span> 72h</div>
             <Eyebrow dim>CONFIGURABLE PER TRADE</Eyebrow>
-            <div style={{ marginTop: 28, position: 'relative', height: 32 }}>
+            <div style={{ marginTop: 20, position: 'relative', height: 32 }}>
               <div style={{ position: 'absolute', left: 0, right: 0, top: 14, height: 1, background: C.line }} />
               <div style={{ position: 'absolute', left: '20%', width: '50%', top: 12, height: 5, background: C.text, borderRadius: 1 }} />
               <div style={{ position: 'absolute', left: '20%', top: 8, width: 1, height: 13, background: C.text }} />
               <div style={{ position: 'absolute', left: '70%', top: 8, width: 1, height: 13, background: C.text }} />
             </div>
-            <div style={{ marginTop: 32, display: 'flex', gap: 6 }}>
+            <div style={{ marginTop: 24, display: 'flex', gap: 6 }}>
               {['MIN', 'TYPICAL', 'MAX'].map((l, i) => (
                 <div key={l} style={{ flex: 1, padding: '8px 10px', border: `1px solid ${i === 1 ? C.lineStrong : C.line}`, background: i === 1 ? 'rgba(255,255,255,0.04)' : 'transparent' }}>
                   <Eyebrow dim>{l}</Eyebrow>
@@ -629,12 +712,12 @@ function Security() {
               ))}
             </div>
           </Glass>
-          <Glass style={{ gridColumn: 'span 5', padding: 28, minHeight: 240 }}>
+          <Glass style={{ gridColumn: isMobile ? 'span 1' : 'span 5', padding: isMobile ? 20 : 28, minHeight: isMobile ? 'auto' : 240 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <Eyebrow>AUDIT TRAIL · LIVE</Eyebrow>
               <Eyebrow accent>● STREAMING</Eyebrow>
             </div>
-            <div style={{ marginTop: 18, fontFamily: FONT_MONO, fontSize: 10.5, lineHeight: 1.85 }}>
+            <div style={{ marginTop: 14, fontFamily: FONT_MONO, fontSize: isMobile ? 9.5 : 10.5, lineHeight: 1.85, overflowX: 'auto' }}>
               {[
                 ['12:04:21', 'LOCK_INIT', '0x4f8a…ab02', 'BTC→USDC', 'open'],
                 ['12:01:08', 'SETTLE',    '0x9c12…0244', 'BTC→USDT', 'ok'],
@@ -642,7 +725,7 @@ function Security() {
                 ['11:55:14', 'LOCK_INIT', '0x71c0…fa9d', 'BTC→USDC', 'open'],
                 ['11:52:00', 'SETTLE',    '0xc842…1493', 'BTC→USDT', 'ok'],
               ].map((r, i) => (
-                <div key={i} style={{ display: 'grid', gridTemplateColumns: '70px 90px 1fr 80px 70px', gap: 10, color: i === 0 ? C.text : C.dim }}>
+                <div key={i} style={{ display: 'grid', gridTemplateColumns: '64px 80px 1fr 70px 56px', gap: 8, color: i === 0 ? C.text : C.dim }}>
                   <span style={{ color: C.faint }}>{r[0]}</span>
                   <span style={{ color: r[1] === 'REVERT' ? C.accent : (r[1] === 'SETTLE' ? C.text : C.dim) }}>{r[1]}</span>
                   <span>{r[2]}</span>
@@ -652,28 +735,28 @@ function Security() {
               ))}
             </div>
           </Glass>
-          <Glass style={{ gridColumn: 'span 4', padding: 28, minHeight: 200, borderColor: 'rgba(230,57,70,0.3)' }}>
+          <Glass style={{ gridColumn: isMobile ? 'span 1' : 'span 4', padding: isMobile ? 20 : 28, minHeight: isMobile ? 'auto' : 200, borderColor: 'rgba(230,57,70,0.3)' }}>
             <Eyebrow accent>NON-CUSTODIAL</Eyebrow>
-            <div style={{ fontFamily: FONT_DISP, fontSize: 32, fontWeight: 200, letterSpacing: '-0.02em', color: C.text, marginTop: 16, lineHeight: 1.05 }}>Keys never leave the client.</div>
-            <div style={{ marginTop: 24, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{ fontFamily: FONT_DISP, fontSize: isMobile ? 24 : 32, fontWeight: 200, letterSpacing: '-0.02em', color: C.text, marginTop: 12, lineHeight: 1.1 }}>Keys never leave the client.</div>
+            <div style={{ marginTop: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
               <CircleBtn size={28} accent>✕</CircleBtn>
               <Eyebrow dim>NO SERVER-SIDE SIGNING</Eyebrow>
             </div>
           </Glass>
-          <Glass style={{ gridColumn: 'span 3', padding: 24, minHeight: 200 }}>
+          <Glass style={{ gridColumn: isMobile ? 'span 1' : 'span 3', padding: isMobile ? 20 : 24, minHeight: isMobile ? 'auto' : 200 }}>
             <Eyebrow>INTENT VERIFY</Eyebrow>
-            <div style={{ fontFamily: FONT_DISP, fontSize: 32, fontWeight: 200, color: C.text, marginTop: 14 }}>EIP-712</div>
+            <div style={{ fontFamily: FONT_DISP, fontSize: isMobile ? 28 : 32, fontWeight: 200, color: C.text, marginTop: 10 }}>EIP-712</div>
             <Eyebrow dim>TYPED SIGNATURES</Eyebrow>
-            <div style={{ marginTop: 18, display: 'flex', flexDirection: 'column', gap: 4, fontFamily: FONT_MONO, fontSize: 9, color: C.dim }}>
+            <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 4, fontFamily: FONT_MONO, fontSize: 9, color: C.dim }}>
               <span>✓ chain_id</span><span>✓ deadline</span><span>✓ secret_hash</span>
             </div>
           </Glass>
-          <Glass style={{ gridColumn: 'span 5', padding: 28, minHeight: 200 }}>
+          <Glass style={{ gridColumn: isMobile ? 'span 1' : 'span 5', padding: isMobile ? 20 : 28, minHeight: isMobile ? 'auto' : 200 }}>
             <Eyebrow>AUTOMATIC REVERSION</Eyebrow>
-            <div style={{ fontFamily: FONT_MONO, fontSize: 13, color: C.text, marginTop: 18, padding: '14px 16px', border: `1px solid ${C.line}`, background: 'var(--c-code-bg)', borderRadius: 8 }}>
+            <div style={{ fontFamily: FONT_MONO, fontSize: isMobile ? 11 : 13, color: C.text, marginTop: 14, padding: '12px 14px', border: `1px solid ${C.line}`, background: 'var(--c-code-bg)', borderRadius: 8, overflowX: 'auto', whiteSpace: 'nowrap' }}>
               if (block.timestamp {'>'} <span style={{ color: C.accent }}>T_lock</span>) → refund(maker)
             </div>
-            <p style={{ fontSize: 12.5, color: C.dim, marginTop: 14, lineHeight: 1.55, fontFamily: FONT_SANS }}>If a counterparty fails to claim within the agreed window, both legs revert. There is no path where one side settles and the other does not.</p>
+            <p style={{ fontSize: 12.5, color: C.dim, marginTop: 12, lineHeight: 1.55, fontFamily: FONT_SANS }}>If a counterparty fails to claim within the agreed window, both legs revert. There is no path where one side settles and the other does not.</p>
           </Glass>
         </div>
       </div>
@@ -682,11 +765,12 @@ function Security() {
 }
 
 function Institutional() {
+  const { isMobile } = useViewport();
   return (
     <Sec idx="05" name="INSTITUTIONAL TRUST" vertLabel="§ COMPLIANCE">
-      <div style={{ marginTop: 48, display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 64 }}>
+      <div style={{ marginTop: 40, display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1.4fr 1fr', gap: isMobile ? 32 : 64 }}>
         <div>
-          <h2 style={{ fontFamily: FONT_DISP, fontSize: 60, fontWeight: 200, letterSpacing: '-0.025em', lineHeight: 1.04, color: C.text, margin: 0 }}>
+          <h2 style={{ fontFamily: FONT_DISP, fontSize: isMobile ? 30 : 60, fontWeight: 200, letterSpacing: '-0.025em', lineHeight: 1.1, color: C.text, margin: 0 }}>
             Designed for{' '}<em style={{ fontStyle: 'italic', color: C.dim }}>serious</em>{' '}market participants.
           </h2>
           <div style={{ marginTop: 40, display: 'flex', flexDirection: 'column' }}>
@@ -741,6 +825,7 @@ function Institutional() {
 }
 
 function Chains() {
+  const { isMobile } = useViewport();
   const chains = [
     { n: 'BTC',      t: 'Bitcoin Layer 1',              p: 46, status: 'LIVE' },
     { n: 'ETH',      t: 'L1 · Mainnet',                p: 22, status: 'LIVE' },
@@ -750,35 +835,36 @@ function Chains() {
   ];
   return (
     <Sec idx="06" name="SUPPORTED CHAINS" vertLabel="≡ NETWORK" id="chains">
-      <div style={{ marginTop: 48, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 80, alignItems: 'center' }}>
-        <div style={{ position: 'relative', height: 460, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div className="orbit-rotate" style={{ position: 'absolute', width: 420, height: 420, borderRadius: '50%', border: `1px dashed ${C.lineStrong}`, animationDuration: '60s' }}>
-            {chains.map((c, i) => {
-              const deg = (i / chains.length) * 360;
-              return (
-                <div key={c.n} style={{ position: 'absolute', top: '50%', left: '50%', transform: `rotate(${deg}deg) translateX(210px) rotate(-${deg}deg)`, marginLeft: -36, marginTop: -36, width: 72, height: 72, borderRadius: '50%', border: `1px solid ${i === 4 ? C.line : C.lineStrong}`, background: i === 4 ? C.bg1 : 'rgba(255,255,255,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: FONT_MONO, fontSize: 10, color: i === 4 ? C.faint : C.text, letterSpacing: '0.06em' }}>
-                  {c.n}
-                </div>
-              );
-            })}
+      <div style={{ marginTop: 40, display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: isMobile ? 32 : 80, alignItems: 'center' }}>
+        {!isMobile && (
+          <div style={{ position: 'relative', height: 460, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div className="orbit-rotate" style={{ position: 'absolute', width: 420, height: 420, borderRadius: '50%', border: `1px dashed ${C.lineStrong}`, animationDuration: '60s' }}>
+              {chains.map((c, i) => {
+                const deg = (i / chains.length) * 360;
+                return (
+                  <div key={c.n} style={{ position: 'absolute', top: '50%', left: '50%', transform: `rotate(${deg}deg) translateX(210px) rotate(-${deg}deg)`, marginLeft: -36, marginTop: -36, width: 72, height: 72, borderRadius: '50%', border: `1px solid ${i === 4 ? C.line : C.lineStrong}`, background: i === 4 ? C.bg1 : 'rgba(255,255,255,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: FONT_MONO, fontSize: 10, color: i === 4 ? C.faint : C.text, letterSpacing: '0.06em' }}>
+                    {c.n}
+                  </div>
+                );
+              })}
+            </div>
+            <div style={{ position: 'absolute', width: 280, height: 280, borderRadius: '50%', border: `1px solid ${C.line}` }} />
+            <Glass style={{ width: 200, height: 200, borderRadius: '50%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', background: 'var(--c-disc-bg)' }}>
+              <Eyebrow dim>SETTLEMENT</Eyebrow>
+              <div style={{ fontFamily: FONT_DISP, fontSize: 26, fontWeight: 200, color: C.text, marginTop: 6 }}>HTLC<br/>Layer</div>
+            </Glass>
           </div>
-          <div style={{ position: 'absolute', width: 280, height: 280, borderRadius: '50%', border: `1px solid ${C.line}` }} />
-          <Glass style={{ width: 200, height: 200, borderRadius: '50%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', background: 'var(--c-disc-bg)' }}>
-            <Eyebrow dim>SETTLEMENT</Eyebrow>
-            <div style={{ fontFamily: FONT_DISP, fontSize: 26, fontWeight: 200, color: C.text, marginTop: 6 }}>HTLC<br/>Layer</div>
-          </Glass>
-        </div>
+        )}
         <div>
-          <h2 style={{ fontFamily: FONT_DISP, fontSize: 44, fontWeight: 200, letterSpacing: '-0.025em', lineHeight: 1.05, color: C.text, margin: 0 }}>Multi-chain settlement.{' '}<span style={{ color: C.dim }}>Native to each network.</span></h2>
-          <div style={{ marginTop: 32 }}>
+          <h2 style={{ fontFamily: FONT_DISP, fontSize: isMobile ? 28 : 44, fontWeight: 200, letterSpacing: '-0.025em', lineHeight: 1.1, color: C.text, margin: 0 }}>Multi-chain settlement.{' '}<span style={{ color: C.dim }}>Native to each network.</span></h2>
+          <div style={{ marginTop: 24 }}>
             {chains.map((c, i) => (
-              <div key={c.n} className="row-hover" style={{ display: 'grid', gridTemplateColumns: '110px 1fr 80px 70px 50px', alignItems: 'center', borderTop: `1px solid ${C.line}`, padding: '18px 0', borderBottom: i === chains.length - 1 ? `1px solid ${C.line}` : 'none' }}>
-                <span style={{ fontFamily: FONT_DISP, fontSize: 24, fontWeight: 300, color: C.text }}>{c.n}</span>
-                <Eyebrow dim>{c.t}</Eyebrow>
-                <div style={{ height: 3, background: 'rgba(255,255,255,0.06)' }}>
-                  <div style={{ width: `${c.p * 2}%`, maxWidth: '100%', height: '100%', background: c.status === 'LIVE' ? C.text : C.faint }} />
-                </div>
-                <Eyebrow dim style={{ textAlign: 'right' }}>{c.p ? `${c.p}%` : '—'}</Eyebrow>
+              <div key={c.n} className="row-hover" style={{ display: 'grid', gridTemplateColumns: isMobile ? '80px 1fr 50px' : '110px 1fr 80px 70px 50px', alignItems: 'center', borderTop: `1px solid ${C.line}`, padding: '16px 0', borderBottom: i === chains.length - 1 ? `1px solid ${C.line}` : 'none' }}>
+                <span style={{ fontFamily: FONT_DISP, fontSize: isMobile ? 18 : 24, fontWeight: 300, color: C.text }}>{c.n}</span>
+                {!isMobile && <Eyebrow dim>{c.t}</Eyebrow>}
+                {!isMobile && <div style={{ height: 3, background: 'rgba(255,255,255,0.06)' }}><div style={{ width: `${c.p * 2}%`, maxWidth: '100%', height: '100%', background: c.status === 'LIVE' ? C.text : C.faint }} /></div>}
+                {!isMobile && <Eyebrow dim style={{ textAlign: 'right' }}>{c.p ? `${c.p}%` : '—'}</Eyebrow>}
+                {isMobile && <Eyebrow dim>{c.t}</Eyebrow>}
                 <Eyebrow accent={c.status !== 'LIVE'} dim={c.status === 'LIVE'} style={{ textAlign: 'right' }}>{c.status}</Eyebrow>
               </div>
             ))}
@@ -790,6 +876,7 @@ function Chains() {
 }
 
 function FaqRoadmap() {
+  const { isMobile } = useViewport();
   const [open, setOpen] = React.useState(0);
   const faqs = [
     { q: 'Does the platform hold my funds?', a: 'No. Funds remain in your wallet or in active smart-contract escrow at all times. The platform has no signing keys to your assets.' },
@@ -800,7 +887,7 @@ function FaqRoadmap() {
   ];
   return (
     <Sec idx="07" name="FAQ · ROADMAP" vertLabel="¶ NEXT">
-      <div style={{ marginTop: 48, display: 'grid', gridTemplateColumns: '1.3fr 1fr', gap: 64 }}>
+      <div style={{ marginTop: 40, display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1.3fr 1fr', gap: isMobile ? 32 : 64 }}>
         <div>
           <Eyebrow dim style={{ display: 'block', marginBottom: 12 }}>FREQUENTLY ASKED</Eyebrow>
           {faqs.map((f, i) => (
@@ -844,36 +931,41 @@ function FaqRoadmap() {
 }
 
 function Footer() {
+  const { isMobile } = useViewport();
   return (
     <>
-      <section style={{ padding: '120px 48px 80px', borderTop: `1px solid ${C.line}`, position: 'relative', overflow: 'hidden' }}>
+      <section style={{ padding: isMobile ? '60px 20px 48px' : '120px 48px 80px', borderTop: `1px solid ${C.line}`, position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', inset: 0, background: `radial-gradient(ellipse 50% 60% at 50% 100%, rgba(230,57,70,0.10), transparent 70%)`, pointerEvents: 'none' }} />
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', alignItems: 'flex-end', gap: 48, position: 'relative' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr auto', alignItems: 'flex-end', gap: isMobile ? 32 : 48, position: 'relative' }}>
           <div>
             <Eyebrow accent>● FINAL CTA</Eyebrow>
-            <h2 style={{ fontFamily: FONT_DISP, fontSize: 104, fontWeight: 200, letterSpacing: '-0.04em', lineHeight: 0.95, color: C.text, margin: '14px 0 0' }}>
+            <h2 style={{ fontFamily: FONT_DISP, fontSize: isMobile ? 42 : 104, fontWeight: 200, letterSpacing: '-0.04em', lineHeight: isMobile ? 1.05 : 0.95, color: C.text, margin: '14px 0 0' }}>
               Decentralized OTC<br/>
               <span style={{ color: C.dim }}>infrastructure for modern markets.</span>
             </h2>
-            <div style={{ marginTop: 28, display: 'flex', gap: 28, alignItems: 'baseline' }}>
-              <Eyebrow>TRADE SECURELY.</Eyebrow>
-              <Eyebrow>SETTLE ATOMICALLY.</Eyebrow>
-              <Eyebrow>OPERATE WITHOUT TRUST.</Eyebrow>
-            </div>
+            {!isMobile && (
+              <div style={{ marginTop: 28, display: 'flex', gap: 28, alignItems: 'baseline' }}>
+                <Eyebrow>TRADE SECURELY.</Eyebrow>
+                <Eyebrow>SETTLE ATOMICALLY.</Eyebrow>
+                <Eyebrow>OPERATE WITHOUT TRUST.</Eyebrow>
+              </div>
+            )}
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, alignItems: 'flex-end', paddingBottom: 24 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, alignItems: isMobile ? 'flex-start' : 'flex-end', paddingBottom: isMobile ? 0 : 24 }}>
             <Pill accent filled large>Start Trading →</Pill>
             <Pill ghost large>Request Technical Briefing</Pill>
             <Eyebrow dim>NO ACCOUNT · WALLET ONLY</Eyebrow>
           </div>
         </div>
       </section>
-      <footer style={{ borderTop: `1px solid ${C.line}`, padding: '32px 48px', display: 'grid', gridTemplateColumns: '1fr auto auto auto auto', gap: 32, alignItems: 'center' }}>
+      <footer style={{ borderTop: `1px solid ${C.line}`, padding: isMobile ? '24px 20px' : '32px 48px', display: 'flex', flexWrap: 'wrap', gap: isMobile ? 16 : 32, alignItems: 'center', justifyContent: 'space-between' }}>
         <Logo />
-        <Eyebrow dim>PROTOCOL</Eyebrow>
-        <Eyebrow dim>SECURITY</Eyebrow>
-        <Eyebrow dim>DOCS</Eyebrow>
-        <Eyebrow dim>© 2026 · NON-CUSTODIAL</Eyebrow>
+        <div style={{ display: 'flex', gap: isMobile ? 16 : 32, flexWrap: 'wrap' }}>
+          <Eyebrow dim>PROTOCOL</Eyebrow>
+          <Eyebrow dim>SECURITY</Eyebrow>
+          <Eyebrow dim>DOCS</Eyebrow>
+          <Eyebrow dim>© 2026 · NON-CUSTODIAL</Eyebrow>
+        </div>
       </footer>
     </>
   );
