@@ -1,0 +1,550 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>HTLC/OTC — Terminal · Live</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@200;300;400;500&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root { --accent: #E63946; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: #070708; color: #EDECE7; font-family: 'Inter', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  body { overflow-x: hidden; }
+  ::selection { background: var(--accent); color: #fff; }
+  a { color: inherit; }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: #070708; }
+  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.15); }
+</style>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const TC = {
+  bg0: '#070708', bg1: '#0E0E10', bg2: '#16161A',
+  line: 'rgba(255,255,255,0.08)', lineStrong: 'rgba(255,255,255,0.18)',
+  text: '#EDECE7', dim: 'rgba(237,236,231,0.55)', faint: 'rgba(237,236,231,0.32)',
+  accent: 'var(--accent, #E63946)',
+  green: '#3FA571',
+};
+const F_DISP = `'Inter Tight', Inter, system-ui, sans-serif`;
+const F_SANS = `'Inter', system-ui, sans-serif`;
+const F_MONO = `'JetBrains Mono', ui-monospace, monospace`;
+
+const Eb = ({ children, accent, dim, style }) => (
+  <span style={{ fontFamily: F_MONO, fontSize: 9.5, letterSpacing: '0.18em', textTransform: 'uppercase', color: accent ? TC.accent : (dim ? TC.faint : TC.dim), ...style }}>{children}</span>
+);
+
+const Glass = ({ children, style, ...rest }) => (
+  <div style={{ background: 'rgba(255,255,255,0.025)', border: `1px solid ${TC.line}`, borderRadius: 12, ...style }} {...rest}>{children}</div>
+);
+
+const Logo = () => (
+  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+    <svg width="20" height="20" viewBox="0 0 22 22">
+      <circle cx="11" cy="11" r="10" fill="none" stroke={TC.text} strokeWidth="1" />
+      <circle cx="11" cy="11" r="4" fill={TC.text} />
+      <line x1="11" y1="0" x2="11" y2="6" stroke={TC.text} strokeWidth="0.5" />
+      <line x1="11" y1="16" x2="11" y2="22" stroke={TC.text} strokeWidth="0.5" />
+    </svg>
+    <span style={{ fontFamily: F_DISP, fontSize: 14, fontWeight: 500, color: TC.text }}>HTLC<span style={{ color: TC.accent }}>/</span>OTC</span>
+  </div>
+);
+
+function rand(seed) { let s = seed; return () => { s = (s * 9301 + 49297) % 233280; return s / 233280; }; }
+
+function StatusBar({ block, ts }) {
+  return (
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 24px', borderBottom: `1px solid ${TC.line}`, background: TC.bg1, fontFamily: F_MONO, fontSize: 10, color: TC.dim }}>
+      <div style={{ display: 'flex', gap: 24 }}>
+        <span style={{ color: TC.accent }}>● MAINNET LIVE</span>
+        <span>BLOCK <span style={{ color: TC.text }}>{block.toLocaleString()}</span></span>
+        <span>EPOCH <span style={{ color: TC.text }}>0x{block.toString(16)}</span></span>
+        <span>GAS <span style={{ color: TC.text }}>14.2</span> gwei</span>
+        <span>BTC FEE <span style={{ color: TC.text }}>3 sat/vB</span></span>
+      </div>
+      <div style={{ display: 'flex', gap: 24 }}>
+        <span>{ts} UTC</span>
+        <span>NODE OPERATORS <span style={{ color: TC.text }}>27/27</span></span>
+        <span style={{ color: TC.green }}>● HEALTHY</span>
+      </div>
+    </div>
+  );
+}
+
+const Nav = ({ block, ts }) => (
+  <header style={{ position: 'sticky', top: 0, zIndex: 50, padding: '14px 24px', display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', borderBottom: `1px solid ${TC.line}`, background: 'rgba(7,7,8,0.85)', backdropFilter: 'blur(20px)' }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+      <a href="HTLC OTC.html" style={{ textDecoration: 'none' }}><Logo /></a>
+      <Eb dim>v0.4 · TERMINAL</Eb>
+    </div>
+    <nav style={{ display: 'flex', gap: 28, justifyContent: 'center' }}>
+      {[['Protocol', 'HTLC OTC.html#protocol'], ['Security', 'HTLC OTC.html#security'], ['Chains', 'HTLC OTC.html#chains'], ['Terminal', '#'], ['Docs', '#']].map(([t, h]) => (
+        <a key={t} href={h} style={{ color: t === 'Terminal' ? TC.text : TC.dim, textDecoration: 'none', fontFamily: F_SANS, fontSize: 13, position: 'relative' }}>
+          {t}
+          {t === 'Terminal' && <span style={{ position: 'absolute', bottom: -18, left: 0, right: 0, height: 1, background: TC.accent }} />}
+        </a>
+      ))}
+    </nav>
+    <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', alignItems: 'center' }}>
+      <button style={{ padding: '7px 12px', border: `1px solid ${TC.lineStrong}`, background: 'transparent', color: TC.text, fontFamily: F_MONO, fontSize: 10, letterSpacing: '0.16em', textTransform: 'uppercase', cursor: 'pointer' }}>Connect Wallet</button>
+      <button style={{ padding: '7px 14px', border: `1px solid ${TC.accent}`, background: TC.accent, color: '#fff', fontFamily: F_MONO, fontSize: 10, letterSpacing: '0.16em', textTransform: 'uppercase', cursor: 'pointer' }}>Launch ↗</button>
+    </div>
+  </header>
+);
+
+function PageHeader() {
+  const [range, setRange] = React.useState(3);
+  const ranges = ['1H', '24H', '7D', '30D', '90D', 'ALL'];
+  return (
+    <div style={{ padding: '32px 24px 24px', borderBottom: `1px solid ${TC.line}`, display: 'grid', gridTemplateColumns: '1fr auto', alignItems: 'flex-end', gap: 32 }}>
+      <div>
+        <Eb>TERMINAL · LIVE INSTRUMENTATION</Eb>
+        <h1 style={{ fontFamily: F_DISP, fontSize: 56, fontWeight: 200, letterSpacing: '-0.025em', lineHeight: 1, color: TC.text, margin: '12px 0 0' }}>
+          Settlement, in real time<span style={{ color: TC.accent }}>.</span>
+        </h1>
+      </div>
+      <div style={{ display: 'flex', gap: 6 }}>
+        {ranges.map((r, i) => (
+          <button key={r} onClick={() => setRange(i)} style={{ padding: '8px 14px', border: `1px solid ${i === range ? TC.lineStrong : TC.line}`, background: i === range ? 'rgba(255,255,255,0.06)' : 'transparent', color: i === range ? TC.text : TC.dim, fontFamily: F_MONO, fontSize: 10, letterSpacing: '0.16em', cursor: 'pointer' }}>{r}</button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function KpiStrip() {
+  const kpis = [
+    { l: 'NOTIONAL · 30D',        v: '$1,418,302,940', s: '↑ 12.4%',        p: 'positive' },
+    { l: 'MARKET CAP · ATTESTED', v: '$842.6M',         s: 'CIRCULATING' },
+    { l: '24H VOLUME',            v: '$48,204,118',     s: '↑ 3.2%',         p: 'positive' },
+    { l: 'ACTIVE LOCKS',          v: '142',             s: '↑ 8 · 24H',      p: 'positive' },
+    { l: 'MEDIAN SETTLE',         v: '4.2m',            s: 'BLOCK CONFIRMED' },
+    { l: 'REVERT RATE',           v: '0.3%',            s: 'AUTO REFUND',    p: 'accent' },
+    { l: 'UPTIME · 90D',          v: '99.98%',          s: 'ROLLING' },
+  ];
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: `repeat(${kpis.length}, 1fr)`, borderBottom: `1px solid ${TC.line}` }}>
+      {kpis.map((k, i) => (
+        <div key={k.l} style={{ padding: '20px', borderRight: i < kpis.length - 1 ? `1px solid ${TC.line}` : 'none' }}>
+          <Eb>{k.l}</Eb>
+          <div style={{ fontFamily: F_DISP, fontSize: 28, fontWeight: 200, letterSpacing: '-0.02em', color: TC.text, marginTop: 8, lineHeight: 1 }}>{k.v}</div>
+          <div style={{ marginTop: 6, fontFamily: F_MONO, fontSize: 9, letterSpacing: '0.12em', color: k.p === 'positive' ? TC.green : (k.p === 'accent' ? TC.accent : TC.faint) }}>{k.s}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function NotionalChart() {
+  const r = rand(42);
+  const pts = Array.from({ length: 90 }, (_, i) => { const base = 30 + i * 0.6; return base + r() * 14; });
+  const max = Math.max(...pts), min = Math.min(...pts);
+  const norm = pts.map(p => 100 - ((p - min) / (max - min)) * 90);
+  const W = 100, H = 100;
+  const path = norm.map((y, i) => `${i === 0 ? 'M' : 'L'} ${(i / (norm.length - 1)) * W} ${y}`).join(' ');
+  const area = `${path} L ${W} ${H} L 0 ${H} Z`;
+  return (
+    <Glass style={{ padding: 22, minHeight: 360 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <div>
+          <Eb>NOTIONAL · 30D · ATTESTED</Eb>
+          <div style={{ fontFamily: F_DISP, fontSize: 40, fontWeight: 200, letterSpacing: '-0.025em', color: TC.text, marginTop: 8 }}>$1,418,302,940 <span style={{ fontSize: 14, color: TC.accent }}>↑ 12.4%</span></div>
+        </div>
+        <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
+          {[['HIGH', '$54.2M'], ['LOW', '$31.6M'], ['AVG', '$47.3M']].map(([l, v]) => (
+            <div key={l} style={{ textAlign: 'right' }}>
+              <Eb dim>{l}</Eb>
+              <div style={{ fontFamily: F_MONO, fontSize: 12, color: TC.text, marginTop: 4 }}>{v}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{ width: '100%', height: 220, marginTop: 18, display: 'block' }}>
+        <defs>
+          <linearGradient id="cg" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#fff" stopOpacity="0.18" />
+            <stop offset="100%" stopColor="#fff" stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        {[0, 25, 50, 75].map(y => <line key={y} x1="0" y1={y} x2={W} y2={y} stroke="rgba(255,255,255,0.05)" strokeWidth="0.2" />)}
+        <path d={area} fill="url(#cg)" />
+        <path d={path} stroke={TC.text} strokeWidth="0.4" fill="none" vectorEffect="non-scaling-stroke" />
+        <circle cx={W} cy={norm[norm.length - 1]} r="0.8" fill="#E63946" />
+      </svg>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8 }}>
+        {['MAR 28', 'APR 04', 'APR 11', 'APR 18', 'APR 25'].map(d => <Eb key={d} dim>{d}</Eb>)}
+      </div>
+    </Glass>
+  );
+}
+
+function OrderBook() {
+  const r = rand(7);
+  const bids = Array.from({ length: 8 }, (_, i) => ({ p: 64210 - i * 18, s: (3 + r() * 24).toFixed(1) }));
+  const asks = Array.from({ length: 8 }, (_, i) => ({ p: 64288 + i * 22, s: (3 + r() * 22).toFixed(1) }));
+  const maxBid = Math.max(...bids.map(b => +b.s));
+  const maxAsk = Math.max(...asks.map(a => +a.s));
+  return (
+    <Glass style={{ padding: 22, minHeight: 360 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+        <Eb>ORDER BOOK · BTC/USDC</Eb>
+        <Eb accent>● LIVE</Eb>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginTop: 18 }}>
+        <div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', fontFamily: F_MONO, fontSize: 9, color: TC.faint, paddingBottom: 6, borderBottom: `1px solid ${TC.line}` }}>
+            <span>BID · USD</span><span style={{ textAlign: 'right' }}>SIZE · BTC</span>
+          </div>
+          {bids.map((b, i) => (
+            <div key={i} style={{ position: 'relative', display: 'grid', gridTemplateColumns: '1fr 1fr', fontFamily: F_MONO, fontSize: 11, padding: '5px 0' }}>
+              <div style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: `${(+b.s / maxBid) * 60}%`, background: 'rgba(63,165,113,0.10)' }} />
+              <span style={{ color: TC.green, position: 'relative' }}>{b.p.toLocaleString()}</span>
+              <span style={{ color: TC.dim, textAlign: 'right', position: 'relative' }}>{b.s}</span>
+            </div>
+          ))}
+        </div>
+        <div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', fontFamily: F_MONO, fontSize: 9, color: TC.faint, paddingBottom: 6, borderBottom: `1px solid ${TC.line}` }}>
+            <span>ASK · USD</span><span style={{ textAlign: 'right' }}>SIZE · BTC</span>
+          </div>
+          {asks.map((a, i) => (
+            <div key={i} style={{ position: 'relative', display: 'grid', gridTemplateColumns: '1fr 1fr', fontFamily: F_MONO, fontSize: 11, padding: '5px 0' }}>
+              <div style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: `${(+a.s / maxAsk) * 60}%`, background: 'rgba(230,57,70,0.10)' }} />
+              <span style={{ color: TC.accent, position: 'relative' }}>{a.p.toLocaleString()}</span>
+              <span style={{ color: TC.dim, textAlign: 'right', position: 'relative' }}>{a.s}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginTop: 22, paddingTop: 16, borderTop: `1px solid ${TC.line}` }}>
+        <div><Eb dim>SPREAD</Eb><div style={{ fontFamily: F_DISP, fontSize: 22, fontWeight: 200, color: TC.text, marginTop: 4 }}>78<span style={{ fontSize: 11, color: TC.dim }}>bps</span></div></div>
+        <div><Eb dim>MID</Eb><div style={{ fontFamily: F_MONO, fontSize: 14, color: TC.text, marginTop: 6 }}>64,249.00</div></div>
+        <div>
+          <Eb dim>DEPTH ±2%</Eb>
+          <div style={{ display: 'flex', gap: 2, marginTop: 6, alignItems: 'flex-end' }}>
+            {[14,22,18,28,16,30,24,12,8,18,26].map((h,i) => <div key={i} style={{ width: 4, height: h, background: TC.text, opacity: 0.7 }} />)}
+          </div>
+        </div>
+      </div>
+    </Glass>
+  );
+}
+
+function LiveTransactions() {
+  const seedRows = () => {
+    const r = rand(Date.now() % 10000);
+    const types = ['LOCK_INIT', 'SETTLE', 'CLAIM', 'REVERT', 'LOCK_INIT', 'SETTLE'];
+    const pairs = ['BTC→USDC', 'BTC→USDT', 'ETH→USDC', 'BTC→USDC', 'ETH→USDT'];
+    const desks = ['Maker_4f', 'Vault_9c', 'Maker_3e', 'Desk_71', 'Vault_c8', 'Maker_22', 'Desk_a1', 'Vault_ff'];
+    return Array.from({ length: 14 }, (_, i) => {
+      const type = types[Math.floor(r() * types.length)];
+      return {
+        ts: `${String(Math.floor(r() * 24)).padStart(2,'0')}:${String(Math.floor(r() * 60)).padStart(2,'0')}:${String(Math.floor(r() * 60)).padStart(2,'0')}`,
+        type,
+        hash: '0x' + Math.floor(r() * 0xffffffff).toString(16).padStart(8,'0').slice(0,4) + '…' + Math.floor(r() * 0xffff).toString(16).padStart(4,'0'),
+        pair: pairs[Math.floor(r() * pairs.length)],
+        size: '$' + (10000 + Math.floor(r() * 990000)).toLocaleString(),
+        chain: ['BTC', 'ETH', 'BTC', 'ETH'][Math.floor(r() * 4)],
+        desk: desks[Math.floor(r() * desks.length)],
+        status: type === 'REVERT' ? 'expired' : (type === 'LOCK_INIT' ? 'open' : 'finalized'),
+      };
+    });
+  };
+  const [rows, setRows] = React.useState(seedRows);
+  React.useEffect(() => {
+    const id = setInterval(() => setRows(seedRows()), 4000);
+    return () => clearInterval(id);
+  }, []);
+  return (
+    <Glass style={{ padding: 0, minHeight: 460 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', padding: '20px 22px 14px', borderBottom: `1px solid ${TC.line}` }}>
+        <Eb>LIVE TRANSACTIONS · ALL CHAINS</Eb>
+        <div style={{ display: 'flex', gap: 12 }}>
+          <Eb accent>● STREAMING</Eb>
+          <Eb dim>14 OF 4,218 TODAY</Eb>
+        </div>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '90px 110px 130px 110px 130px 80px 130px 90px', gap: 16, padding: '12px 22px', borderBottom: `1px solid ${TC.line}`, fontFamily: F_MONO, fontSize: 9, color: TC.faint, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+        <span>TIME</span><span>EVENT</span><span>TX HASH</span><span>PAIR</span><span>SIZE</span><span>CHAIN</span><span>COUNTERPARTY</span><span style={{ textAlign: 'right' }}>STATUS</span>
+      </div>
+      {rows.map((r, i) => (
+        <div key={i} style={{ display: 'grid', gridTemplateColumns: '90px 110px 130px 110px 130px 80px 130px 90px', gap: 16, padding: '11px 22px', borderBottom: i < rows.length - 1 ? `1px solid rgba(255,255,255,0.04)` : 'none', fontFamily: F_MONO, fontSize: 11, alignItems: 'center', background: i === 0 ? 'rgba(255,255,255,0.025)' : 'transparent' }}>
+          <span style={{ color: TC.faint }}>{r.ts}</span>
+          <span style={{ color: r.type === 'REVERT' ? TC.accent : (r.type === 'SETTLE' || r.type === 'CLAIM' ? TC.green : TC.text) }}>{r.type}</span>
+          <span style={{ color: TC.dim }}>{r.hash}</span>
+          <span style={{ color: TC.text }}>{r.pair}</span>
+          <span style={{ color: TC.text }}>{r.size}</span>
+          <span style={{ color: TC.dim }}>{r.chain}</span>
+          <span style={{ color: TC.dim }}>{r.desk}</span>
+          <span style={{ textAlign: 'right', color: r.status === 'expired' ? TC.accent : (r.status === 'finalized' ? TC.green : TC.dim) }}>{r.status}</span>
+        </div>
+      ))}
+    </Glass>
+  );
+}
+
+function VolumeByChain() {
+  const data = [
+    { n: 'BTC',  p: 46, c: TC.text },
+    { n: 'ETH',  p: 22, c: 'rgba(255,255,255,0.7)' },
+    { n: 'USDT', p: 18, c: 'rgba(255,255,255,0.5)' },
+    { n: 'USDC', p: 14, c: TC.accent },
+  ];
+  let acc = 0;
+  const r2 = 38, cx = 50, cy = 50;
+  const arcs = data.map(d => {
+    const start = (acc / 100) * Math.PI * 2 - Math.PI / 2;
+    acc += d.p;
+    const end = (acc / 100) * Math.PI * 2 - Math.PI / 2;
+    const large = d.p > 50 ? 1 : 0;
+    const x1 = cx + r2 * Math.cos(start), y1 = cy + r2 * Math.sin(start);
+    const x2 = cx + r2 * Math.cos(end),   y2 = cy + r2 * Math.sin(end);
+    return { d: `M ${cx} ${cy} L ${x1} ${y1} A ${r2} ${r2} 0 ${large} 1 ${x2} ${y2} Z`, c: d.c };
+  });
+  return (
+    <Glass style={{ padding: 22, minHeight: 360 }}>
+      <Eb>VOLUME BY CHAIN · 30D</Eb>
+      <div style={{ display: 'grid', gridTemplateColumns: '160px 1fr', gap: 24, marginTop: 18, alignItems: 'center' }}>
+        <svg viewBox="0 0 100 100" style={{ width: 160, height: 160 }}>
+          {arcs.map((a, i) => <path key={i} d={a.d} fill={a.c} />)}
+          <circle cx="50" cy="50" r="24" fill={TC.bg0} />
+          <text x="50" y="48" textAnchor="middle" fontFamily={F_MONO} fontSize="3.5" fill={TC.faint} letterSpacing="0.1em">TOTAL</text>
+          <text x="50" y="56" textAnchor="middle" fontFamily={F_DISP} fontSize="9" fontWeight="200" fill={TC.text}>$1.42B</text>
+        </svg>
+        <div>
+          {data.map(d => (
+            <div key={d.n} style={{ display: 'grid', gridTemplateColumns: '12px 60px 1fr 50px', gap: 10, alignItems: 'center', padding: '8px 0', borderBottom: `1px solid ${TC.line}` }}>
+              <span style={{ width: 10, height: 10, background: d.c, display: 'block' }} />
+              <span style={{ fontFamily: F_DISP, fontSize: 16, fontWeight: 300, color: TC.text }}>{d.n}</span>
+              <div style={{ height: 2, background: 'rgba(255,255,255,0.06)' }}><div style={{ width: `${d.p * 2}%`, maxWidth: '100%', height: '100%', background: d.c }} /></div>
+              <Eb style={{ textAlign: 'right' }}>{d.p}%</Eb>
+            </div>
+          ))}
+        </div>
+      </div>
+    </Glass>
+  );
+}
+
+function MarketCap() {
+  const rows = [
+    { sym: 'BTC',  name: 'Bitcoin',              price: 64249.20, ch: '+1.42%', mcap: '$1.27T',  vol: '$28.4B', sup: '19.7M',  ok: 1 },
+    { sym: 'ETH',  name: 'Ethereum · L1',        price: 3284.10,  ch: '+0.86%', mcap: '$394.8B', vol: '$14.2B', sup: '120.2M', ok: 1 },
+    { sym: 'USDT', name: 'Tether · ERC-20',      price: 1.000,    ch: '+0.01%', mcap: '$112.4B', vol: '$48.1B', sup: '112.4B', ok: 1 },
+    { sym: 'USDC', name: 'USD Coin',             price: 0.9998,   ch: '−0.02%', mcap: '$32.6B',  vol: '$8.9B',  sup: '32.6B',  ok: 1 },
+    { sym: 'ARB',  name: 'Arbitrum · pipeline',  price: 0.84,     ch: '+2.10%', mcap: '$2.1B',   vol: '$184M',  sup: '2.5B',   ok: 0 },
+    { sym: 'OP',   name: 'Optimism · pipeline',  price: 1.92,     ch: '+1.20%', mcap: '$2.0B',   vol: '$140M',  sup: '1.0B',   ok: 0 },
+  ];
+  return (
+    <Glass style={{ padding: 0, minHeight: 360 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', padding: '20px 22px 14px', borderBottom: `1px solid ${TC.line}` }}>
+        <Eb>SUPPORTED ASSETS · MARKET CAP</Eb>
+        <Eb dim>SOURCE · CHAINLINK + INTERNAL ORACLE</Eb>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '70px 1fr 110px 90px 110px 110px 110px 70px', gap: 16, padding: '12px 22px', borderBottom: `1px solid ${TC.line}`, fontFamily: F_MONO, fontSize: 9, color: TC.faint, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+        <span>SYM</span><span>NAME</span><span style={{ textAlign: 'right' }}>PRICE</span><span style={{ textAlign: 'right' }}>24H</span><span style={{ textAlign: 'right' }}>MARKET CAP</span><span style={{ textAlign: 'right' }}>24H VOL</span><span style={{ textAlign: 'right' }}>SUPPLY</span><span style={{ textAlign: 'right' }}>STATUS</span>
+      </div>
+      {rows.map((r, i) => (
+        <div key={r.sym} style={{ display: 'grid', gridTemplateColumns: '70px 1fr 110px 90px 110px 110px 110px 70px', gap: 16, padding: '13px 22px', borderBottom: i < rows.length - 1 ? `1px solid rgba(255,255,255,0.04)` : 'none', alignItems: 'center', fontFamily: F_MONO, fontSize: 11.5 }}>
+          <span style={{ fontFamily: F_DISP, fontSize: 16, fontWeight: 400, color: TC.text }}>{r.sym}</span>
+          <span style={{ color: TC.dim, fontFamily: F_SANS, fontSize: 12 }}>{r.name}</span>
+          <span style={{ textAlign: 'right', color: TC.text }}>{r.price.toLocaleString(undefined, { minimumFractionDigits: r.price < 10 ? 4 : 2 })}</span>
+          <span style={{ textAlign: 'right', color: r.ch.startsWith('−') ? TC.accent : TC.green }}>{r.ch}</span>
+          <span style={{ textAlign: 'right', color: TC.text }}>{r.mcap}</span>
+          <span style={{ textAlign: 'right', color: TC.dim }}>{r.vol}</span>
+          <span style={{ textAlign: 'right', color: TC.dim }}>{r.sup}</span>
+          <span style={{ textAlign: 'right', color: r.ok ? TC.green : TC.faint, fontSize: 9, letterSpacing: '0.1em' }}>{r.ok ? '● LIVE' : 'PIPELINE'}</span>
+        </div>
+      ))}
+    </Glass>
+  );
+}
+
+function SettlementMetrics() {
+  return (
+    <Glass style={{ padding: 22, minHeight: 360 }}>
+      <Eb>SETTLEMENT QUALITY · 30D</Eb>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18, marginTop: 18 }}>
+        {[
+          { l: 'P50 SETTLE', v: '4.2m',     s: '±0.4m' },
+          { l: 'P95 SETTLE', v: '9.6m',     s: '±0.8m' },
+          { l: 'P99 SETTLE', v: '14.1m',    s: '±1.2m' },
+          { l: 'GAS / TRADE', v: '0.0042 ETH', s: 'AVG' },
+        ].map(k => (
+          <div key={k.l}>
+            <Eb dim>{k.l}</Eb>
+            <div style={{ fontFamily: F_DISP, fontSize: 26, fontWeight: 200, color: TC.text, marginTop: 6, lineHeight: 1 }}>{k.v}</div>
+            <Eb dim>{k.s}</Eb>
+          </div>
+        ))}
+      </div>
+      <div style={{ marginTop: 24, paddingTop: 18, borderTop: `1px solid ${TC.line}` }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+          <Eb>SETTLE TIME · DISTRIBUTION</Eb>
+          <Eb dim>4,218 TRADES</Eb>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 3, marginTop: 12, height: 60 }}>
+          {[8,18,42,68,94,82,56,34,22,14,9,6,4,3,2,1].map((h, i) => (
+            <div key={i} style={{ flex: 1, height: `${h}%`, background: i === 4 ? TC.accent : TC.text, opacity: i === 4 ? 1 : 0.7 }} />
+          ))}
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
+          <Eb dim>0m</Eb><Eb dim>P50 4.2m</Eb><Eb dim>15m+</Eb>
+        </div>
+      </div>
+    </Glass>
+  );
+}
+
+function ActiveLocks() {
+  const r = rand(99);
+  const cells = Array.from({ length: 24 * 7 }, () => r());
+  return (
+    <Glass style={{ padding: 22, minHeight: 360 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+        <Eb>LOCK ACTIVITY · 7D × 24H</Eb>
+        <Eb dim>UTC</Eb>
+      </div>
+      <div style={{ marginTop: 18, display: 'grid', gridTemplateColumns: '30px 1fr', gap: 8 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-around' }}>
+          {['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'].map(d => <Eb key={d} dim style={{ fontSize: 8 }}>{d}</Eb>)}
+        </div>
+        <div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(24, 1fr)', gap: 2 }}>
+            {cells.map((v, i) => (
+              <div key={i} style={{ aspectRatio: '1', background: `rgba(237,236,231,${0.04 + v * 0.85})`, borderRadius: 1 }} />
+            ))}
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
+            {['00', '06', '12', '18', '24'].map(h => <Eb key={h} dim style={{ fontSize: 8 }}>{h}</Eb>)}
+          </div>
+        </div>
+      </div>
+      <div style={{ marginTop: 18, paddingTop: 14, borderTop: `1px solid ${TC.line}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Eb dim>DENSITY</Eb>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <Eb dim>LO</Eb>
+          {[0.05, 0.2, 0.4, 0.6, 0.85].map(o => <div key={o} style={{ width: 14, height: 14, background: `rgba(237,236,231,${o})` }} />)}
+          <Eb dim>HI</Eb>
+        </div>
+      </div>
+    </Glass>
+  );
+}
+
+function SpreadPanel() {
+  return (
+    <Glass style={{ padding: 22, minHeight: 220 }}>
+      <Eb>SPREAD · BTC/USDC · 24H</Eb>
+      <div style={{ fontFamily: F_DISP, fontSize: 36, fontWeight: 200, color: TC.text, marginTop: 8 }}>
+        78<span style={{ fontSize: 14, color: TC.dim }}>bps</span> <span style={{ fontSize: 12, color: TC.green }}>↓ −12bps</span>
+      </div>
+      <svg viewBox="0 0 200 60" preserveAspectRatio="none" style={{ width: '100%', height: 60, marginTop: 14 }}>
+        <path d="M0 40 L10 38 L20 32 L30 36 L40 28 L50 24 L60 26 L70 20 L80 22 L90 18 L100 14 L110 18 L120 12 L130 16 L140 10 L150 8 L160 12 L170 6 L180 10 L190 4 L200 8" stroke={TC.text} strokeWidth="0.6" fill="none" vectorEffect="non-scaling-stroke" />
+        <line x1="0" y1="30" x2="200" y2="30" stroke="rgba(255,255,255,0.1)" strokeDasharray="2 3" strokeWidth="0.3" />
+      </svg>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginTop: 14, paddingTop: 14, borderTop: `1px solid ${TC.line}` }}>
+        {[['HIGH', '142bps'], ['LOW', '64bps'], ['SAMPLES', '288']].map(([l,v]) => (
+          <div key={l}><Eb dim>{l}</Eb><div style={{ fontFamily: F_MONO, fontSize: 12, color: TC.text, marginTop: 4 }}>{v}</div></div>
+        ))}
+      </div>
+    </Glass>
+  );
+}
+
+function Leaderboard() {
+  const rows = [
+    ['01', 'Vault_9c.eth',  '$284M', '142'],
+    ['02', 'Maker_4f.eth',  '$211M', '98'],
+    ['03', 'Desk_71.eth',   '$166M', '82'],
+    ['04', 'Vault_c8.eth',  '$132M', '64'],
+    ['05', 'Maker_3e.eth',  '$98M',  '48'],
+    ['06', 'Desk_a1.eth',   '$72M',  '37'],
+  ];
+  return (
+    <Glass style={{ padding: 22, minHeight: 360 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+        <Eb>TOP COUNTERPARTIES · 30D</Eb>
+        <Eb dim>PSEUDONYMOUS</Eb>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '30px 1fr 90px 60px', gap: 12, padding: '10px 0', borderBottom: `1px solid ${TC.line}`, marginTop: 14, fontFamily: F_MONO, fontSize: 9, color: TC.faint, letterSpacing: '0.1em' }}>
+        <span>#</span><span>WALLET</span><span style={{ textAlign: 'right' }}>VOLUME</span><span style={{ textAlign: 'right' }}>TRADES</span>
+      </div>
+      {rows.map(([n, w, v, t], i) => (
+        <div key={n} style={{ display: 'grid', gridTemplateColumns: '30px 1fr 90px 60px', gap: 12, padding: '11px 0', borderBottom: i < rows.length - 1 ? `1px solid rgba(255,255,255,0.04)` : 'none', alignItems: 'center', fontFamily: F_MONO, fontSize: 11 }}>
+          <span style={{ color: TC.faint }}>{n}</span>
+          <span style={{ color: TC.text }}>{w}</span>
+          <span style={{ textAlign: 'right', color: TC.text }}>{v}</span>
+          <span style={{ textAlign: 'right', color: TC.dim }}>{t}</span>
+        </div>
+      ))}
+    </Glass>
+  );
+}
+
+function Terminal() {
+  const [block, setBlock] = React.useState(19488302);
+  const [ts, setTs] = React.useState('12:04:21');
+  React.useEffect(() => {
+    const id = setInterval(() => {
+      setBlock(b => b + 1);
+      const d = new Date();
+      setTs(`${String(d.getUTCHours()).padStart(2,'0')}:${String(d.getUTCMinutes()).padStart(2,'0')}:${String(d.getUTCSeconds()).padStart(2,'0')}`);
+    }, 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  return (
+    <div style={{ background: TC.bg0, color: TC.text, minHeight: '100vh', fontFamily: F_SANS }}>
+      <Nav />
+      <StatusBar block={block} ts={ts} />
+      <PageHeader />
+      <KpiStrip />
+
+      <div style={{ padding: 20, display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 20 }}>
+        <NotionalChart />
+        <OrderBook />
+      </div>
+
+      <div style={{ padding: '0 20px 20px' }}>
+        <LiveTransactions />
+      </div>
+
+      <div style={{ padding: '0 20px 20px', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 20 }}>
+        <VolumeByChain />
+        <SettlementMetrics />
+        <ActiveLocks />
+      </div>
+
+      <div style={{ padding: '0 20px 20px', display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 20 }}>
+        <MarketCap />
+        <Leaderboard />
+      </div>
+
+      <div style={{ padding: '0 20px 32px' }}>
+        <SpreadPanel />
+      </div>
+
+      <footer style={{ borderTop: `1px solid ${TC.line}`, padding: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: TC.bg1 }}>
+        <div style={{ display: 'flex', gap: 24, alignItems: 'center' }}>
+          <Logo />
+          <Eb dim>TERMINAL · v0.4 MAINNET</Eb>
+        </div>
+        <Eb dim>BLOCK {block.toLocaleString()} · {ts} UTC · NON-CUSTODIAL</Eb>
+      </footer>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<Terminal />);
+</script>
+</body>
+</html>
