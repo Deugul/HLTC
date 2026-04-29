@@ -259,10 +259,17 @@ function useReveal(cls = 'reveal', threshold = 0.12) {
   React.useEffect(() => {
     const el = ref.current;
     if (!el) return;
+    // If already in viewport (anchor nav, first-paint) — reveal immediately, no flicker
+    const r = el.getBoundingClientRect();
+    if (r.top < window.innerHeight && r.bottom > 0) {
+      el.classList.add('in');
+      return;
+    }
     el.classList.add(cls);
+    // threshold:0 fires on first pixel visible; rootMargin catches near-edge elements
     const io = new IntersectionObserver(([e]) => {
       if (e.isIntersecting) { el.classList.add('in'); io.disconnect(); }
-    }, { threshold });
+    }, { threshold: 0, rootMargin: '0px 0px 60px 0px' });
     io.observe(el);
     return () => io.disconnect();
   }, []);
@@ -275,13 +282,18 @@ function useStaggerReveal(count, threshold = 0.1) {
     const el = ref.current;
     if (!el) return;
     const children = [...el.children];
+    const r = el.getBoundingClientRect();
+    if (r.top < window.innerHeight && r.bottom > 0) {
+      children.forEach(c => c.classList.add('in'));
+      return;
+    }
     children.forEach((child, i) => {
       child.classList.add('reveal');
       if (i > 0) child.classList.add(`sd${Math.min(i, 6)}`);
     });
     const io = new IntersectionObserver(([e]) => {
       if (e.isIntersecting) { children.forEach(c => c.classList.add('in')); io.disconnect(); }
-    }, { threshold });
+    }, { threshold: 0, rootMargin: '0px 0px 60px 0px' });
     io.observe(el);
     return () => io.disconnect();
   }, []);
