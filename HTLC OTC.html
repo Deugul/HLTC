@@ -382,12 +382,11 @@ const CircleBtn = ({ children, size = 40, accent, filled, style }) => (
 
 const Sec = ({ idx, name, vertLabel, children, padTop = 80, padBottom = 80, style, id }) => {
   const { isMobile } = useViewport();
-  const ref = useReveal('reveal', 0.08);
   const px = isMobile ? 20 : 48;
   const pt = isMobile ? Math.max(48, padTop * 0.6) : padTop;
   const pb = isMobile ? Math.max(48, padBottom * 0.6) : padBottom;
   return (
-    <section ref={ref} id={id} style={{ position: 'relative', borderTop: `1px solid ${C.line}`, padding: `${pt}px ${px}px ${pb}px`, ...style }}>
+    <section id={id} style={{ position: 'relative', borderTop: `1px solid ${C.line}`, padding: `${pt}px ${px}px ${pb}px`, ...style }}>
       <div style={{ position: 'absolute', top: 16, left: px, right: px, display: 'flex', justifyContent: 'space-between' }}>
         <Eyebrow>{idx} / {name}</Eyebrow>
         {vertLabel && !isMobile ? <Eyebrow dim>{vertLabel}</Eyebrow> : null}
