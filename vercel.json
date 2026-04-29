@@ -1,0 +1,5 @@
+{
+  "redirects": [
+    { "source": "/", "destination": "/HTLC%20OTC.html", "permanent": false }
+  ]
+}
