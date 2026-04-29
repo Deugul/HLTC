@@ -266,12 +266,12 @@ function useReveal(cls = 'reveal', threshold = 0.12) {
       return;
     }
     el.classList.add(cls);
-    // threshold:0 fires on first pixel visible; rootMargin catches near-edge elements
     const io = new IntersectionObserver(([e]) => {
       if (e.isIntersecting) { el.classList.add('in'); io.disconnect(); }
     }, { threshold: 0, rootMargin: '0px 0px 60px 0px' });
     io.observe(el);
-    return () => io.disconnect();
+    const timer = setTimeout(() => { el.classList.add('in'); io.disconnect(); }, 1200);
+    return () => { clearTimeout(timer); io.disconnect(); };
   }, []);
   return ref;
 }
@@ -295,7 +295,8 @@ function useStaggerReveal(count, threshold = 0.1) {
       if (e.isIntersecting) { children.forEach(c => c.classList.add('in')); io.disconnect(); }
     }, { threshold: 0, rootMargin: '0px 0px 60px 0px' });
     io.observe(el);
-    return () => io.disconnect();
+    const timer = setTimeout(() => { children.forEach(c => c.classList.add('in')); io.disconnect(); }, 1200);
+    return () => { clearTimeout(timer); io.disconnect(); };
   }, []);
   return ref;
 }
@@ -616,7 +617,7 @@ function About() {
             Built for secure peer-to-peer OTC trading.{' '}
             <span style={{ color: C.dim }}>Direct BTC-to-stablecoin settlement powered by on-chain contracts — no central custody, full blockchain transparency.</span>
           </h2>
-          <div ref={statsRef} style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(5, 1fr)', gap: isMobile ? 0 : 0, marginTop: 32, borderTop: `1px solid ${C.line}` }}>
+          <div ref={statsRef} style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(5, 1fr)', gap: 0, marginTop: 32, borderTop: `1px solid ${C.line}` }}>
             {[
               { n: '00', t: 'No Central Custody', d: 'Funds stay in your wallet.' },
               { n: 'HTLC', t: 'Smart Contract Escrow', d: 'Hashed time-lock protection.' },
@@ -624,7 +625,9 @@ function About() {
               { n: 'AUTO', t: 'Fund Reversion', d: 'Refund on timeout.' },
               { n: 'OPEN', t: 'On-Chain Audit', d: 'Every step verifiable.' },
             ].map((x, i) => (
-              <div key={x.t} style={{ padding: `28px ${i < 4 ? '20px' : '0'} 24px ${i > 0 ? '20px' : '0'}`, borderRight: i < 4 ? `1px solid ${C.line}` : 'none' }}>
+              <div key={x.t} style={isMobile
+                ? { padding: '18px 0', borderBottom: i < 4 ? `1px solid ${C.line}` : 'none' }
+                : { padding: `28px ${i < 4 ? '20px' : '0'} 24px ${i > 0 ? '20px' : '0'}`, borderRight: i < 4 ? `1px solid ${C.line}` : 'none' }}>
                 <div style={{ fontFamily: FONT_DISP, fontSize: 28, fontWeight: 200, letterSpacing: '-0.02em', color: C.text }}>{x.n}</div>
                 <Eyebrow style={{ display: 'block', marginTop: 10 }}>{x.t}</Eyebrow>
                 <div style={{ fontSize: 12, color: C.dim, marginTop: 6, lineHeight: 1.5, fontFamily: FONT_SANS }}>{x.d}</div>
@@ -849,7 +852,6 @@ function Institutional() {
             ))}
             </div>
           )}
-          </div>
         </div>
         <div>
           <Glass style={{ padding: 28, minHeight: 360 }}>
