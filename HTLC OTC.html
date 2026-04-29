@@ -87,6 +87,10 @@
   ::-webkit-scrollbar-thumb { background: var(--c-thumb); border-radius: 4px; }
   ::-webkit-scrollbar-thumb:hover { background: var(--c-thumb-hover); }
 
+  /* ── Horizontal scroll carousels ────────────────────── */
+  .h-scroll { display: flex; flex-direction: row; overflow-x: auto; -webkit-overflow-scrolling: touch; scroll-snap-type: x mandatory; gap: 12px; }
+  .h-scroll > * { flex-shrink: 0; scroll-snap-align: start; }
+
   /* ── Mobile nav ─────────────────────────────────────── */
   @media (max-width: 767px) {
     .nav-links { display: none !important; }
@@ -650,19 +654,18 @@ function HowItWorks() {
     { n: '06', t: 'On-Chain Completion',      s: 'emit Settled(tx_hash)',         d: 'Every step is transparently recorded on-chain for full auditability and institutional confidence.' },
   ];
   const { isMobile, isTablet } = useViewport();
-  const cols = isMobile ? 1 : isTablet ? 2 : 3;
   const staggerRef = useStaggerReveal(6, 0.08);
   return (
     <Sec idx="03" name="HOW IT WORKS" vertLabel="∑ FLOW">
       <div style={{ marginTop: 16, marginBottom: 28 }}>
-        <h2 style={{ fontFamily: FONT_DISP, fontSize: isMobile ? 28 : 56, fontWeight: 200, letterSpacing: '-0.025em', lineHeight: 1.1, color: C.text, margin: 0, maxWidth: 900 }}>
+        <h2 style={{ fontFamily: FONT_DISP, fontSize: isMobile ? 28 : isTablet ? 36 : 56, fontWeight: 200, letterSpacing: '-0.025em', lineHeight: 1.1, color: C.text, margin: 0, maxWidth: 900 }}>
           Seamless OTC trading,{' '}<span style={{ color: C.dim }}>powered by smart contracts.</span>
         </h2>
       </div>
-      {isMobile ? (
-        <div style={{ overflowX: 'auto', display: 'flex', gap: 12, WebkitOverflowScrolling: 'touch', scrollSnapType: 'x mandatory', margin: '16px -20px 0', padding: '0 20px 12px' }}>
+      {isTablet ? (
+        <div style={{ overflowX: 'auto', display: 'flex', flexDirection: 'row', gap: 12, WebkitOverflowScrolling: 'touch', scrollSnapType: 'x mandatory', margin: '16px -20px 0', padding: '0 20px 12px' }}>
           {steps.map((s, i) => (
-            <div key={s.n} style={{ minWidth: '76vw', scrollSnapAlign: 'start', flexShrink: 0, border: `1px solid ${C.line}`, borderRadius: 14, padding: '20px 18px' }}>
+            <div key={s.n} style={{ minWidth: '80vw', maxWidth: '80vw', scrollSnapAlign: 'start', flexShrink: 0, border: `1px solid ${C.line}`, borderRadius: 14, padding: '20px 18px' }}>
               <div style={{ position: 'relative', width: 100, height: 100, marginBottom: 16 }}>
                 <div className="orbit-rotate" style={{ position: 'absolute', inset: 0, borderRadius: '50%', border: `1px dashed ${C.lineStrong}`, animationDuration: `${40 + i * 6}s` }} />
                 <div style={{ position: 'absolute', inset: 14, borderRadius: '50%', border: `1px solid ${C.line}`, background: C.bg1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -677,12 +680,12 @@ function HowItWorks() {
         </div>
       ) : (
         <div style={{ marginTop: 24 }}>
-          <div ref={staggerRef} style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, 1fr)`, position: 'relative' }}>
+          <div ref={staggerRef} style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', position: 'relative' }}>
             {steps.map((s, i) => {
-              const col = i % cols;
-              const lastRow = i >= cols;
+              const col = i % 3;
+              const lastRow = i >= 3;
               return (
-                <div key={s.n} style={{ padding: col === 0 ? '0 32px 0 0' : (col === 1 && cols === 3 ? '0 32px' : '0 0 0 32px'), borderRight: col < cols - 1 ? `1px solid ${C.line}` : 'none', borderTop: lastRow ? `1px solid ${C.line}` : 'none', paddingTop: lastRow ? 40 : 0, paddingBottom: 40 }}>
+                <div key={s.n} style={{ padding: col === 0 ? '0 32px 0 0' : (col === 1 ? '0 32px' : '0 0 0 32px'), borderRight: col < 2 ? `1px solid ${C.line}` : 'none', borderTop: lastRow ? `1px solid ${C.line}` : 'none', paddingTop: lastRow ? 40 : 0, paddingBottom: 40 }}>
                   <div style={{ position: 'relative', height: 160, display: 'flex', alignItems: 'center', justifyContent: 'flex-start' }}>
                     <div style={{ position: 'relative', width: 160, height: 160 }}>
                       <div className="orbit-rotate" style={{ position: 'absolute', inset: 0, borderRadius: '50%', border: `1px dashed ${C.lineStrong}`, animationDuration: `${40 + i * 6}s` }} />
@@ -809,16 +812,16 @@ function Security() {
 }
 
 function Institutional() {
-  const { isMobile } = useViewport();
+  const { isMobile, isTablet } = useViewport();
   return (
     <Sec idx="05" name="INSTITUTIONAL TRUST" vertLabel="§ COMPLIANCE">
-      <div style={{ marginTop: 40, display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1.4fr 1fr', gap: isMobile ? 32 : 64 }}>
+      <div style={{ marginTop: 40, display: 'grid', gridTemplateColumns: isTablet ? '1fr' : '1.4fr 1fr', gap: isTablet ? 32 : 64 }}>
         <div>
-          <h2 style={{ fontFamily: FONT_DISP, fontSize: isMobile ? 30 : 60, fontWeight: 200, letterSpacing: '-0.025em', lineHeight: 1.1, color: C.text, margin: 0 }}>
+          <h2 style={{ fontFamily: FONT_DISP, fontSize: isMobile ? 30 : isTablet ? 42 : 60, fontWeight: 200, letterSpacing: '-0.025em', lineHeight: 1.1, color: C.text, margin: 0 }}>
             Designed for{' '}<em style={{ fontStyle: 'italic', color: C.dim }}>serious</em>{' '}market participants.
           </h2>
-          {isMobile ? (
-            <div style={{ marginTop: 24, overflowX: 'auto', display: 'flex', gap: 12, WebkitOverflowScrolling: 'touch', scrollSnapType: 'x mandatory', margin: '24px -20px 0', padding: '0 20px 12px' }}>
+          {isTablet ? (
+            <div style={{ overflowX: 'auto', display: 'flex', flexDirection: 'row', gap: 12, WebkitOverflowScrolling: 'touch', scrollSnapType: 'x mandatory', margin: '24px -20px 0', padding: '0 20px 12px' }}>
               {[
                 ['01', 'Counterparty risk minimized', 'Settlement is enforced by contracts, not by trust in the other side of the trade.'],
                 ['02', 'Smart-contract enforced', 'Every settlement is bound to on-chain conditions — they execute or they revert.'],
@@ -826,7 +829,7 @@ function Institutional() {
                 ['04', 'Wallet verification layer', 'Cryptographic ownership signature on every order, before any HTLC is drafted.'],
                 ['05', 'Transparent records', 'Every leg, every revert, every settlement — written to the chain, queryable forever.'],
               ].map(([n, t, d]) => (
-                <div key={n} style={{ minWidth: '72vw', scrollSnapAlign: 'start', flexShrink: 0, border: `1px solid ${C.line}`, borderRadius: 12, padding: '20px 18px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <div key={n} style={{ minWidth: '80vw', maxWidth: '80vw', scrollSnapAlign: 'start', flexShrink: 0, border: `1px solid ${C.line}`, borderRadius: 12, padding: '20px 18px', display: 'flex', flexDirection: 'column', gap: 10 }}>
                   <Eyebrow accent>{n}</Eyebrow>
                   <span style={{ fontFamily: FONT_DISP, fontSize: 20, fontWeight: 300, color: C.text, lineHeight: 1.2 }}>{t}</span>
                   <p style={{ fontSize: 13, color: C.dim, lineHeight: 1.55, margin: 0, fontFamily: FONT_SANS }}>{d}</p>
