@@ -450,8 +450,20 @@ function Hero() {
       <div className="hero-dot-grid" />
       <div style={{ position: 'relative', zIndex: 2 }}>
         <Eyebrow accent>● MAINNET LIVE</Eyebrow>
-        <div style={{ display: 'flex', justifyContent: 'center', margin: '32px 0' }}>
-          <Orbital />
+        {/* Simplified disc — no overflowing orbital rings on mobile */}
+        <div style={{ display: 'flex', justifyContent: 'center', margin: '28px 0' }}>
+          <div style={{ position: 'relative', width: 280, height: 280 }}>
+            <div className="orbit-rotate" style={{ position: 'absolute', inset: 0, borderRadius: '50%', border: `1px dashed ${C.lineStrong}`, animationDuration: '120s' }} />
+            <div style={{ position: 'absolute', inset: 18, borderRadius: '50%', border: `1px solid ${C.line}` }} />
+            <Glass noSpring style={{ position: 'absolute', inset: 30, borderRadius: '50%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: 20, background: 'var(--c-disc-bg)', borderColor: 'var(--c-line-strong)' }}>
+              <Eyebrow dim style={{ fontSize: 7.5, letterSpacing: '0.12em' }}>BTC ↔ USDT / USDC</Eyebrow>
+              <h1 style={{ fontFamily: FONT_DISP, fontSize: 20, fontWeight: 200, color: C.text, margin: '8px 0 6px', lineHeight: 1.1, letterSpacing: '-0.02em' }}>Trustless OTC<br/>Trading.</h1>
+              <div style={{ fontFamily: FONT_MONO, fontSize: 7.5, color: C.dim, textTransform: 'uppercase', lineHeight: 1.5 }}>Secure · Non-Custodial</div>
+              <div style={{ display: 'flex', gap: 6, marginTop: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
+                <Pill accent filled style={{ fontSize: 9, padding: '6px 12px' }}>Launch →</Pill>
+              </div>
+            </Glass>
+          </div>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginTop: 8 }}>
           <div style={{ padding: '16px', border: `1px solid ${C.line}`, borderRadius: 12 }}>
@@ -633,31 +645,49 @@ function HowItWorks() {
           Seamless OTC trading,{' '}<span style={{ color: C.dim }}>powered by smart contracts.</span>
         </h2>
       </div>
-      <div style={{ marginTop: 24 }}>
-        <div ref={staggerRef} style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, 1fr)`, position: 'relative' }}>
-          {steps.map((s, i) => {
-            const col = i % cols;
-            const lastRow = i >= cols;
-            return (
-              <div key={s.n} style={{ padding: isMobile ? '24px 0' : col === 0 ? '0 32px 0 0' : (col === 1 && cols === 3 ? '0 32px' : '0 0 0 32px'), borderRight: col < cols - 1 ? `1px solid ${C.line}` : 'none', borderTop: lastRow ? `1px solid ${C.line}` : 'none', paddingTop: lastRow && !isMobile ? 40 : (isMobile ? 24 : 0), paddingBottom: 40 }}>
-                <div style={{ position: 'relative', height: 160, display: 'flex', alignItems: 'center', justifyContent: 'flex-start' }}>
-                  <div style={{ position: 'relative', width: 160, height: 160 }}>
-                    <div className="orbit-rotate" style={{ position: 'absolute', inset: 0, borderRadius: '50%', border: `1px dashed ${C.lineStrong}`, animationDuration: `${40 + i * 6}s` }} />
-                    <div style={{ position: 'absolute', inset: 22, borderRadius: '50%', border: `1px solid ${C.line}`, background: C.bg1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <div style={{ fontFamily: FONT_DISP, fontSize: 48, fontWeight: 200, letterSpacing: '-0.03em', color: C.text }}>{s.n}</div>
-                    </div>
-                  </div>
-                </div>
-                <div style={{ marginTop: 24 }}>
-                  <h3 style={{ fontFamily: FONT_DISP, fontSize: 24, fontWeight: 300, letterSpacing: '-0.01em', color: C.text, margin: 0 }}>{s.t}</h3>
-                  <code style={{ display: 'block', fontFamily: FONT_MONO, fontSize: 11, color: C.accent, marginTop: 8, letterSpacing: '0.02em' }}>{s.s}</code>
-                  <p style={{ fontSize: 13.5, lineHeight: 1.55, color: C.dim, marginTop: 12, maxWidth: 320, fontFamily: FONT_SANS }}>{s.d}</p>
+      {isMobile ? (
+        <div style={{ overflowX: 'auto', display: 'flex', gap: 12, WebkitOverflowScrolling: 'touch', scrollSnapType: 'x mandatory', margin: '16px -20px 0', padding: '0 20px 12px' }}>
+          {steps.map((s, i) => (
+            <div key={s.n} style={{ minWidth: '76vw', scrollSnapAlign: 'start', flexShrink: 0, border: `1px solid ${C.line}`, borderRadius: 14, padding: '20px 18px' }}>
+              <div style={{ position: 'relative', width: 100, height: 100, marginBottom: 16 }}>
+                <div className="orbit-rotate" style={{ position: 'absolute', inset: 0, borderRadius: '50%', border: `1px dashed ${C.lineStrong}`, animationDuration: `${40 + i * 6}s` }} />
+                <div style={{ position: 'absolute', inset: 14, borderRadius: '50%', border: `1px solid ${C.line}`, background: C.bg1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <div style={{ fontFamily: FONT_DISP, fontSize: 32, fontWeight: 200, color: C.text }}>{s.n}</div>
                 </div>
               </div>
-            );
-          })}
+              <h3 style={{ fontFamily: FONT_DISP, fontSize: 20, fontWeight: 300, color: C.text, margin: 0 }}>{s.t}</h3>
+              <code style={{ display: 'block', fontFamily: FONT_MONO, fontSize: 10, color: C.accent, marginTop: 6, letterSpacing: '0.02em' }}>{s.s}</code>
+              <p style={{ fontSize: 13, lineHeight: 1.55, color: C.dim, marginTop: 10, fontFamily: FONT_SANS }}>{s.d}</p>
+            </div>
+          ))}
         </div>
-      </div>
+      ) : (
+        <div style={{ marginTop: 24 }}>
+          <div ref={staggerRef} style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, 1fr)`, position: 'relative' }}>
+            {steps.map((s, i) => {
+              const col = i % cols;
+              const lastRow = i >= cols;
+              return (
+                <div key={s.n} style={{ padding: col === 0 ? '0 32px 0 0' : (col === 1 && cols === 3 ? '0 32px' : '0 0 0 32px'), borderRight: col < cols - 1 ? `1px solid ${C.line}` : 'none', borderTop: lastRow ? `1px solid ${C.line}` : 'none', paddingTop: lastRow ? 40 : 0, paddingBottom: 40 }}>
+                  <div style={{ position: 'relative', height: 160, display: 'flex', alignItems: 'center', justifyContent: 'flex-start' }}>
+                    <div style={{ position: 'relative', width: 160, height: 160 }}>
+                      <div className="orbit-rotate" style={{ position: 'absolute', inset: 0, borderRadius: '50%', border: `1px dashed ${C.lineStrong}`, animationDuration: `${40 + i * 6}s` }} />
+                      <div style={{ position: 'absolute', inset: 22, borderRadius: '50%', border: `1px solid ${C.line}`, background: C.bg1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <div style={{ fontFamily: FONT_DISP, fontSize: 48, fontWeight: 200, letterSpacing: '-0.03em', color: C.text }}>{s.n}</div>
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{ marginTop: 24 }}>
+                    <h3 style={{ fontFamily: FONT_DISP, fontSize: 24, fontWeight: 300, letterSpacing: '-0.01em', color: C.text, margin: 0 }}>{s.t}</h3>
+                    <code style={{ display: 'block', fontFamily: FONT_MONO, fontSize: 11, color: C.accent, marginTop: 8, letterSpacing: '0.02em' }}>{s.s}</code>
+                    <p style={{ fontSize: 13.5, lineHeight: 1.55, color: C.dim, marginTop: 12, maxWidth: 320, fontFamily: FONT_SANS }}>{s.d}</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </Sec>
   );
 }
@@ -773,7 +803,25 @@ function Institutional() {
           <h2 style={{ fontFamily: FONT_DISP, fontSize: isMobile ? 30 : 60, fontWeight: 200, letterSpacing: '-0.025em', lineHeight: 1.1, color: C.text, margin: 0 }}>
             Designed for{' '}<em style={{ fontStyle: 'italic', color: C.dim }}>serious</em>{' '}market participants.
           </h2>
-          <div style={{ marginTop: 40, display: 'flex', flexDirection: 'column' }}>
+          {isMobile ? (
+            <div style={{ marginTop: 24, overflowX: 'auto', display: 'flex', gap: 12, WebkitOverflowScrolling: 'touch', scrollSnapType: 'x mandatory', margin: '24px -20px 0', padding: '0 20px 12px' }}>
+              {[
+                ['01', 'Counterparty risk minimized', 'Settlement is enforced by contracts, not by trust in the other side of the trade.'],
+                ['02', 'Smart-contract enforced', 'Every settlement is bound to on-chain conditions — they execute or they revert.'],
+                ['03', 'Regulatory-flexible', 'Modular policy layer; per-desk allowlists; attestable to counsel.'],
+                ['04', 'Wallet verification layer', 'Cryptographic ownership signature on every order, before any HTLC is drafted.'],
+                ['05', 'Transparent records', 'Every leg, every revert, every settlement — written to the chain, queryable forever.'],
+              ].map(([n, t, d]) => (
+                <div key={n} style={{ minWidth: '72vw', scrollSnapAlign: 'start', flexShrink: 0, border: `1px solid ${C.line}`, borderRadius: 12, padding: '20px 18px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  <Eyebrow accent>{n}</Eyebrow>
+                  <span style={{ fontFamily: FONT_DISP, fontSize: 20, fontWeight: 300, color: C.text, lineHeight: 1.2 }}>{t}</span>
+                  <p style={{ fontSize: 13, color: C.dim, lineHeight: 1.55, margin: 0, fontFamily: FONT_SANS }}>{d}</p>
+                  <CircleBtn size={28} style={{ alignSelf: 'flex-end' }}>↗</CircleBtn>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div style={{ marginTop: 40, display: 'flex', flexDirection: 'column' }}>
             {[
               ['01', 'Counterparty risk minimized', 'Settlement is enforced by contracts, not by trust in the other side of the trade.'],
               ['02', 'Smart-contract enforced', 'Every settlement is bound to on-chain conditions — they execute or they revert.'],
@@ -788,6 +836,8 @@ function Institutional() {
                 <CircleBtn size={32}>↗</CircleBtn>
               </div>
             ))}
+            </div>
+          )}
           </div>
         </div>
         <div>
@@ -875,6 +925,70 @@ function Chains() {
   );
 }
 
+const ROADMAP_ITEMS = [
+  { q: 'NOW',   t: 'Mainnet · Live',                  d: 'BTC ↔ USDT/USDC settlement is live on mainnet.', live: true },
+  { q: 'NEXT',  t: 'Intent transaction verification', d: 'Programmable settlement conditions; pre-trade attestation.' },
+  { q: 'SOON',  t: 'Expanded wallet integrations',    d: 'Hardware wallets, MPC custody, institutional signers.' },
+  { q: 'SOON',  t: 'Enhanced dashboard visibility',   d: 'Per-desk PnL, lock pipeline, settlement health.' },
+  { q: 'LATER', t: 'Improved onboarding',             d: 'Guided wallet pairing; counterparty discovery.' },
+  { q: 'LATER', t: 'Advanced institutional tools',    d: 'Permissioned vaults; expanded ERC-20 support; multi-leg swaps.' },
+];
+
+function RoadmapTimeline() {
+  const [activeIdx, setActiveIdx] = React.useState(0);
+  const itemRefs = React.useRef([]);
+  const lineRef = React.useRef(null);
+  const containerRef = React.useRef(null);
+
+  React.useEffect(() => {
+    const observers = [];
+    itemRefs.current.forEach((el, i) => {
+      if (!el) return;
+      const io = new IntersectionObserver(([e]) => {
+        if (e.isIntersecting) setActiveIdx(prev => Math.max(prev, i));
+      }, { threshold: 0.6, rootMargin: '0px 0px -20% 0px' });
+      io.observe(el);
+      observers.push(io);
+    });
+    return () => observers.forEach(o => o.disconnect());
+  }, []);
+
+  React.useEffect(() => {
+    if (!lineRef.current || !containerRef.current || !itemRefs.current[activeIdx]) return;
+    const container = containerRef.current.getBoundingClientRect();
+    const active = itemRefs.current[activeIdx].getBoundingClientRect();
+    const progress = (active.top + active.height / 2) - container.top;
+    lineRef.current.style.height = `${Math.max(0, progress)}px`;
+  }, [activeIdx]);
+
+  return (
+    <Glass style={{ padding: 28, position: 'relative' }}>
+      <div ref={containerRef} style={{ position: 'relative', paddingLeft: 24 }}>
+        {/* base grey line */}
+        <div style={{ position: 'absolute', top: 8, bottom: 8, left: 5, width: 1, background: C.line }} />
+        {/* animated red progress line */}
+        <div ref={lineRef} style={{ position: 'absolute', top: 8, left: 5, width: 1, background: C.accent, transition: 'height 0.6s cubic-bezier(0.16,1,0.3,1)', height: 0 }} />
+        {ROADMAP_ITEMS.map((r, i) => (
+          <div key={i} ref={el => itemRefs.current[i] = el} style={{ position: 'relative', paddingBottom: 22 }}>
+            <div style={{
+              position: 'absolute', left: -22, top: 4, width: 11, height: 11, borderRadius: '50%',
+              background: i <= activeIdx ? C.accent : C.bg1,
+              border: `1px solid ${i <= activeIdx ? C.accent : C.lineStrong}`,
+              transition: 'background 0.4s ease, border-color 0.4s ease',
+              boxShadow: i === activeIdx ? `0 0 8px ${C.accent}` : 'none',
+            }} />
+            <div style={{ display: 'flex', gap: 14, alignItems: 'baseline' }}>
+              <Eyebrow accent={i <= activeIdx} dim={i > activeIdx}>{r.q}</Eyebrow>
+              <span style={{ fontFamily: FONT_DISP, fontSize: 18, fontWeight: 300, color: i <= activeIdx ? C.text : C.dim, transition: 'color 0.4s ease' }}>{r.t}</span>
+            </div>
+            <p style={{ fontSize: 12.5, color: C.dim, marginTop: 6, fontFamily: FONT_SANS }}>{r.d}</p>
+          </div>
+        ))}
+      </div>
+    </Glass>
+  );
+}
+
 function FaqRoadmap() {
   const { isMobile } = useViewport();
   const [open, setOpen] = React.useState(0);
@@ -902,28 +1016,7 @@ function FaqRoadmap() {
         </div>
         <div>
           <Eyebrow dim style={{ display: 'block', marginBottom: 12 }}>ROADMAP · 12-MONTH HORIZON</Eyebrow>
-          <Glass style={{ padding: 28, position: 'relative' }}>
-            <div style={{ position: 'relative', paddingLeft: 24 }}>
-              <div style={{ position: 'absolute', top: 8, bottom: 8, left: 5, width: 1, background: C.line }} />
-              {[
-                { q: 'NOW',   t: 'Mainnet · Live', d: 'BTC ↔ USDT/USDC settlement is live on mainnet.', live: true },
-                { q: 'NEXT',  t: 'Intent transaction verification', d: 'Programmable settlement conditions; pre-trade attestation.' },
-                { q: 'SOON',  t: 'Expanded wallet integrations', d: 'Hardware wallets, MPC custody, institutional signers.' },
-                { q: 'SOON',  t: 'Enhanced dashboard visibility', d: 'Per-desk PnL, lock pipeline, settlement health.' },
-                { q: 'LATER', t: 'Improved onboarding', d: 'Guided wallet pairing; counterparty discovery.' },
-                { q: 'LATER', t: 'Advanced institutional tools', d: 'Permissioned vaults; expanded ERC-20 support; multi-leg swaps.' },
-              ].map((r, i) => (
-                <div key={i} style={{ position: 'relative', paddingBottom: 22 }}>
-                  <div style={{ position: 'absolute', left: -22, top: 4, width: 11, height: 11, borderRadius: '50%', background: r.live ? C.accent : C.bg1, border: `1px solid ${r.live ? C.accent : C.lineStrong}` }} />
-                  <div style={{ display: 'flex', gap: 14, alignItems: 'baseline' }}>
-                    <Eyebrow accent={r.live} dim={!r.live}>{r.q}</Eyebrow>
-                    <span style={{ fontFamily: FONT_DISP, fontSize: 18, fontWeight: 300, color: C.text }}>{r.t}</span>
-                  </div>
-                  <p style={{ fontSize: 12.5, color: C.dim, marginTop: 6, fontFamily: FONT_SANS }}>{r.d}</p>
-                </div>
-              ))}
-            </div>
-          </Glass>
+          <RoadmapTimeline />
         </div>
       </div>
     </Sec>
