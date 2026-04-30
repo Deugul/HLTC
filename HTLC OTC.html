@@ -33,7 +33,7 @@
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; background: var(--c-bg0); color: var(--c-text); font-family: 'Inter', system-ui, sans-serif; -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; transition: background 300ms, color 300ms; }
-  body { overflow-x: hidden; }
+  body { overflow-x: clip; }
   button { font-family: inherit; }
   ::selection { background: var(--accent); color: #fff; }
   @keyframes orbit-cw  { from { transform: rotate(0deg); }   to { transform: rotate(360deg); } }
@@ -663,7 +663,7 @@ function HowItWorks() {
         </h2>
       </div>
       {isTablet ? (
-        <div style={{ overflowX: 'auto', display: 'flex', flexDirection: 'row', gap: 12, WebkitOverflowScrolling: 'touch', scrollSnapType: 'x mandatory', margin: '16px -20px 0', padding: '0 20px 12px' }}>
+        <div style={{ overflowX: 'auto', display: 'flex', flexDirection: 'row', gap: 12, WebkitOverflowScrolling: 'touch', scrollSnapType: 'x mandatory', overscrollBehaviorX: 'contain', margin: '16px -20px 0', padding: '0 20px 12px' }}>
           {steps.map((s, i) => (
             <div key={s.n} style={{ minWidth: '80vw', maxWidth: '80vw', scrollSnapAlign: 'start', flexShrink: 0, border: `1px solid ${C.line}`, borderRadius: 14, padding: '20px 18px' }}>
               <div style={{ position: 'relative', width: 100, height: 100, marginBottom: 16 }}>
@@ -821,7 +821,7 @@ function Institutional() {
             Designed for{' '}<em style={{ fontStyle: 'italic', color: C.dim }}>serious</em>{' '}market participants.
           </h2>
           {isTablet ? (
-            <div style={{ overflowX: 'auto', display: 'flex', flexDirection: 'row', gap: 12, WebkitOverflowScrolling: 'touch', scrollSnapType: 'x mandatory', margin: '24px -20px 0', padding: '0 20px 12px' }}>
+            <div style={{ overflowX: 'auto', display: 'flex', flexDirection: 'row', gap: 12, WebkitOverflowScrolling: 'touch', scrollSnapType: 'x mandatory', overscrollBehaviorX: 'contain', margin: '24px -20px 0', padding: '0 20px 12px' }}>
               {[
                 ['01', 'Counterparty risk minimized', 'Settlement is enforced by contracts, not by trust in the other side of the trade.'],
                 ['02', 'Smart-contract enforced', 'Every settlement is bound to on-chain conditions — they execute or they revert.'],
@@ -951,31 +951,32 @@ const ROADMAP_ITEMS = [
 ];
 
 function RoadmapTimeline() {
-  const [activeIdx, setActiveIdx] = React.useState(0);
+  const [activeIdx, setActiveIdx] = React.useState(-1);
   const itemRefs = React.useRef([]);
   const lineRef = React.useRef(null);
   const containerRef = React.useRef(null);
 
   React.useEffect(() => {
-    const observers = [];
-    itemRefs.current.forEach((el, i) => {
-      if (!el) return;
-      const io = new IntersectionObserver(([e]) => {
-        if (e.isIntersecting) setActiveIdx(prev => Math.max(prev, i));
-      }, { threshold: 0.6, rootMargin: '0px 0px -20% 0px' });
-      io.observe(el);
-      observers.push(io);
-    });
-    return () => observers.forEach(o => o.disconnect());
+    const update = () => {
+      if (!lineRef.current || !containerRef.current) return;
+      const midpoint = window.innerHeight * 0.65;
+      let last = -1;
+      itemRefs.current.forEach((el, i) => {
+        if (el && el.getBoundingClientRect().top < midpoint) last = i;
+      });
+      setActiveIdx(last);
+      if (last >= 0 && itemRefs.current[last]) {
+        const cTop = containerRef.current.getBoundingClientRect().top;
+        const aRect = itemRefs.current[last].getBoundingClientRect();
+        lineRef.current.style.height = `${Math.max(0, aRect.top + aRect.height / 2 - cTop)}px`;
+      } else {
+        lineRef.current.style.height = '0px';
+      }
+    };
+    window.addEventListener('scroll', update, { passive: true });
+    update();
+    return () => window.removeEventListener('scroll', update);
   }, []);
-
-  React.useEffect(() => {
-    if (!lineRef.current || !containerRef.current || !itemRefs.current[activeIdx]) return;
-    const container = containerRef.current.getBoundingClientRect();
-    const active = itemRefs.current[activeIdx].getBoundingClientRect();
-    const progress = (active.top + active.height / 2) - container.top;
-    lineRef.current.style.height = `${Math.max(0, progress)}px`;
-  }, [activeIdx]);
 
   return (
     <Glass style={{ padding: 28, position: 'relative' }}>
